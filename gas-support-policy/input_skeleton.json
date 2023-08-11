@@ -1,0 +1,144 @@
+{
+    "credentialData": {
+        "credentials": [
+            {
+                "type": [
+                    "VerifiableCredential"
+                ]
+            },
+            {
+                "type": [
+                    "VerifiableCredential",
+                    "ChangedWorkcapacityCredential"
+                ],
+                "category": "D1",
+                "percentage": 50
+            },
+            {
+                "type": [
+                    "VerifiableCredential",
+                    "ProofOfActualGasConsumptionCredential"
+                ],
+                "year": "2023",
+                "month": "04",
+                "consumption": 1000
+            },
+            {
+                "type": [
+                    "VerifiableCredential",
+                    "ProofOfActualGasConsumptionCredential"
+                ],
+                "year": "2023",
+                "month": "03",
+                "consumption": 1000
+            },
+            {
+                "type": [
+                    "VerifiableCredential",
+                    "ProofOfActualGasConsumptionCredential"
+                ],
+                "year": "2023",
+                "month": "02",
+                "consumption": 1000
+            },
+            {
+                "type": [
+                    "VerifiableCredential",
+                    "ProofOfActualGasConsumptionCredential"
+                ],
+                "year": "2023",
+                "month": "01",
+                "consumption": 1000
+            },
+            {
+                "type": [
+                    "VerifiableCredential",
+                    "ProofOfActualGasConsumptionCredential"
+                ],
+                "year": "2022",
+                "month": "12",
+                "consumption": 1000
+            },
+            {
+                "type": [
+                    "VerifiableCredential",
+                    "ProofOfActualGasConsumptionCredential"
+                ],
+                "year": "2022",
+                "month": "11",
+                "consumption": 1000
+            },
+            {
+                "type": [
+                    "VerifiableCredential",
+                    "ProofOfActualGasConsumptionCredential"
+                ],
+                "year": "2022",
+                "month": "10",
+                "consumption": 1000
+            },
+            {
+                "type": [
+                    "VerifiableCredential",
+                    "ProofOfActualGasConsumptionCredential"
+                ],
+                "year": "2022",
+                "month": "09",
+                "consumption": 1000
+            },
+            {
+                "type": [
+                    "VerifiableCredential",
+                    "ProofOfActualGasConsumptionCredential"
+                ],
+                "year": "2022",
+                "month": "08",
+                "consumption": 1000
+            },
+            {
+                "type": [
+                    "VerifiableCredential",
+                    "ProofOfActualGasConsumptionCredential"
+                ],
+                "year": "2022",
+                "month": "07",
+                "consumption": 1000
+            },
+            {
+                "type": [
+                    "VerifiableCredential",
+                    "ProofOfActualGasConsumptionCredential"
+                ],
+                "year": "2022",
+                "month": "06",
+                "consumption": 1000
+            },
+            {
+                "type": [
+                    "VerifiableCredential",
+                    "ProofOfActualGasConsumptionCredential"
+                ],
+                "year": "2022",
+                "month": "05",
+                "consumption": 1000
+            },
+            {
+                "type": [
+                    "VerifiableCredential",
+                    "ProofOfActualGasConsumptionCredential"
+                ],
+                "year": "2022",
+                "month": "04",
+                "consumption": 1000
+            }
+        ]
+    },
+    "parameter": {
+        "consumption": 985,
+        "price": {
+            "amount": 747,
+            "unit": "HUF"
+        },
+        "expectedSupportAmmount": 73579.5
+    }
+}

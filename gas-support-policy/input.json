@@ -1,0 +1,397 @@
+{
+    "credentialData": {
+        "type" : [ "VerifiablePresentation" ],
+        "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://w3id.org/security/suites/jws-2020/v1" ],
+        "id" : "urn:uuid:f261c073-fff8-4cd2-8ee1-50cd363884d4",
+        "holder" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+        "verifiableCredential" : [ {
+          "type" : [ "VerifiableCredential", "ProofOfActualGasConsumptionCredential" ],
+          "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://www.w3.org/2018/credentials/examples/v1", "https://w3id.org/security/suites/jws-2020/v1" ],
+          "id" : "urn:uuid:f4d7f086-1309-4a49-aa5c-010528685268",
+          "issuer" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ"
+          },
+          "issuanceDate" : "2023-05-25T20:08:37Z",
+          "issued" : "2023-05-25T20:08:37Z",
+          "validFrom" : "2023-05-25T20:08:37Z",
+          "proof" : {
+            "type" : "JsonWebSignature2020",
+            "creator" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "created" : "2023-05-25T20:08:37Z",
+            "verificationMethod" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ#z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "jws" : "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJFZERTQSJ9..F7Sa7sayiomGmO7koWPWZglhtElvmbJOzBA6XL0eBxm7pQWW7ecJIFg5b7xGgZKy2zt-qUHhBlsJsi7ITlb3Dg"
+          },
+          "credentialSubject" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "firstName" : "Martin",
+            "lastName" : "Farkas"
+          },
+          "year" : "2022",
+          "month" : "04",
+          "consumption" : 4000
+        }, {
+          "type" : [ "VerifiableCredential", "ProofOfActualGasConsumptionCredential" ],
+          "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://www.w3.org/2018/credentials/examples/v1", "https://w3id.org/security/suites/jws-2020/v1" ],
+          "id" : "urn:uuid:a45af450-37ff-4ffc-8eb5-584d8ae13586",
+          "issuer" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ"
+          },
+          "issuanceDate" : "2023-05-25T20:09:17Z",
+          "issued" : "2023-05-25T20:09:17Z",
+          "validFrom" : "2023-05-25T20:09:17Z",
+          "proof" : {
+            "type" : "JsonWebSignature2020",
+            "creator" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "created" : "2023-05-25T20:09:17Z",
+            "verificationMethod" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ#z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "jws" : "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJFZERTQSJ9..lY1OY4zyWT5DdgbMeJUT95Cu8FceyCoHortwjNumQL9PuHIYlo0Zsuu2PQYmkVg_sX8dQNvWIKs96hLs9f8gBw"
+          },
+          "credentialSubject" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "firstName" : "Martin",
+            "lastName" : "Farkas"
+          },
+          "year" : "2022",
+          "month" : "05",
+          "consumption" : 4000
+        }, {
+          "type" : [ "VerifiableCredential", "ProofOfActualGasConsumptionCredential" ],
+          "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://www.w3.org/2018/credentials/examples/v1", "https://w3id.org/security/suites/jws-2020/v1" ],
+          "id" : "urn:uuid:5b846dc9-6fcf-4e18-a52e-18ac4e4ab562",
+          "issuer" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ"
+          },
+          "issuanceDate" : "2023-05-25T20:09:50Z",
+          "issued" : "2023-05-25T20:09:50Z",
+          "validFrom" : "2023-05-25T20:09:50Z",
+          "proof" : {
+            "type" : "JsonWebSignature2020",
+            "creator" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "created" : "2023-05-25T20:09:50Z",
+            "verificationMethod" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ#z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "jws" : "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJFZERTQSJ9..BgTCPmQtTV8UgXa54O1ut6EqlOo8lzZx8oUWwwskAcFeJomaPvjzLFbryioyFLQK4lftoemVMmOj2aIYTP-0Cg"
+          },
+          "credentialSubject" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "firstName" : "Martin",
+            "lastName" : "Farkas"
+          },
+          "year" : "2022",
+          "month" : "06",
+          "consumption" : 4000
+        }, {
+          "type" : [ "VerifiableCredential", "ProofOfActualGasConsumptionCredential" ],
+          "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://www.w3.org/2018/credentials/examples/v1", "https://w3id.org/security/suites/jws-2020/v1" ],
+          "id" : "urn:uuid:46be0151-8d30-4e6d-8e94-7f0e6e6e996d",
+          "issuer" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ"
+          },
+          "issuanceDate" : "2023-05-25T20:10:08Z",
+          "issued" : "2023-05-25T20:10:08Z",
+          "validFrom" : "2023-05-25T20:10:08Z",
+          "proof" : {
+            "type" : "JsonWebSignature2020",
+            "creator" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "created" : "2023-05-25T20:10:08Z",
+            "verificationMethod" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ#z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "jws" : "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJFZERTQSJ9..M1DfvSCtEzZSimglr7WgTpi3s-jJ6ptGA76l1fhiiKdUP8eV_8SFECmGEyUh6Ga0AYdB-iyVGqZYHrKXgrbtCQ"
+          },
+          "credentialSubject" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "firstName" : "Martin",
+            "lastName" : "Farkas"
+          },
+          "year" : "2022",
+          "month" : "07",
+          "consumption" : 4000
+        }, {
+          "type" : [ "VerifiableCredential", "ProofOfActualGasConsumptionCredential" ],
+          "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://www.w3.org/2018/credentials/examples/v1", "https://w3id.org/security/suites/jws-2020/v1" ],
+          "id" : "urn:uuid:885b36ab-0bf6-4f4f-9df6-7e2ac83b102d",
+          "issuer" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ"
+          },
+          "issuanceDate" : "2023-05-25T20:10:38Z",
+          "issued" : "2023-05-25T20:10:38Z",
+          "validFrom" : "2023-05-25T20:10:38Z",
+          "proof" : {
+            "type" : "JsonWebSignature2020",
+            "creator" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "created" : "2023-05-25T20:10:38Z",
+            "verificationMethod" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ#z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "jws" : "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJFZERTQSJ9..S80cz4VS-zFmGwdIasXLFEMKlaZtJ9yTxrEFcl7dPP91z4KTT6DcwwWEvj6puE_LQvVcOUa47snKOdLL_CSlCg"
+          },
+          "credentialSubject" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "firstName" : "Martin",
+            "lastName" : "Farkas"
+          },
+          "year" : "2022",
+          "month" : "08",
+          "consumption" : 4000
+        }, {
+          "type" : [ "VerifiableCredential", "ProofOfActualGasConsumptionCredential" ],
+          "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://www.w3.org/2018/credentials/examples/v1", "https://w3id.org/security/suites/jws-2020/v1" ],
+          "id" : "urn:uuid:ce04cb86-10c1-4608-b3be-870790bb0d30",
+          "issuer" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ"
+          },
+          "issuanceDate" : "2023-05-25T20:13:13Z",
+          "issued" : "2023-05-25T20:13:13Z",
+          "validFrom" : "2023-05-25T20:13:13Z",
+          "proof" : {
+            "type" : "JsonWebSignature2020",
+            "creator" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "created" : "2023-05-25T20:13:13Z",
+            "verificationMethod" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ#z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "jws" : "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJFZERTQSJ9..lFu9uYD7pXnhZbdr5yqJ1ykxCcHmTbxOEVtsm1sYPFZUn8GNhKxr6zPZto6pV9Rv80s3AFthkjnZaYujCcCICw"
+          },
+          "credentialSubject" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "firstName" : "Martin",
+            "lastName" : "Farkas"
+          },
+          "year" : "2022",
+          "month" : "09",
+          "consumption" : 4000
+        }, {
+          "type" : [ "VerifiableCredential", "ProofOfActualGasConsumptionCredential" ],
+          "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://www.w3.org/2018/credentials/examples/v1", "https://w3id.org/security/suites/jws-2020/v1" ],
+          "id" : "urn:uuid:91c425e8-1045-46cd-b9db-bff48b0d55db",
+          "issuer" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ"
+          },
+          "issuanceDate" : "2023-05-25T20:13:35Z",
+          "issued" : "2023-05-25T20:13:35Z",
+          "validFrom" : "2023-05-25T20:13:35Z",
+          "proof" : {
+            "type" : "JsonWebSignature2020",
+            "creator" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "created" : "2023-05-25T20:13:35Z",
+            "verificationMethod" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ#z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "jws" : "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJFZERTQSJ9..z63qqDuSqhT8RtRDPc0Li0-z1wdNhO8oAiDNJnCWYQT18zueXFLzk0HlRI3aBix8DWptlij7OOxkdrdrPvEzAw"
+          },
+          "credentialSubject" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "firstName" : "Martin",
+            "lastName" : "Farkas"
+          },
+          "year" : "2022",
+          "month" : "10",
+          "consumption" : 4000
+        }, {
+          "type" : [ "VerifiableCredential", "ProofOfActualGasConsumptionCredential" ],
+          "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://www.w3.org/2018/credentials/examples/v1", "https://w3id.org/security/suites/jws-2020/v1" ],
+          "id" : "urn:uuid:3f7c4ff7-f560-403a-b53f-ca78bd38e13a",
+          "issuer" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ"
+          },
+          "issuanceDate" : "2023-05-25T20:15:23Z",
+          "issued" : "2023-05-25T20:15:23Z",
+          "validFrom" : "2023-05-25T20:15:23Z",
+          "proof" : {
+            "type" : "JsonWebSignature2020",
+            "creator" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "created" : "2023-05-25T20:15:23Z",
+            "verificationMethod" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ#z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "jws" : "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJFZERTQSJ9..jR_jdivKeMtFcY_AXkc1QwcFK_8KgNGk3JoZz6IpbfuVpWpHrA9wrTxLbaT76KXEDyGbpBxzwXXjYATCdiRVBw"
+          },
+          "credentialSubject" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "firstName" : "Martin",
+            "lastName" : "Farkas"
+          },
+          "year" : "2022",
+          "month" : "11",
+          "consumption" : 4000
+        }, {
+          "type" : [ "VerifiableCredential", "ProofOfActualGasConsumptionCredential" ],
+          "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://www.w3.org/2018/credentials/examples/v1", "https://w3id.org/security/suites/jws-2020/v1" ],
+          "id" : "urn:uuid:1193c870-cd43-4cbb-9597-75750ae85376",
+          "issuer" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ"
+          },
+          "issuanceDate" : "2023-05-25T20:18:52Z",
+          "issued" : "2023-05-25T20:18:52Z",
+          "validFrom" : "2023-05-25T20:18:52Z",
+          "proof" : {
+            "type" : "JsonWebSignature2020",
+            "creator" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "created" : "2023-05-25T20:18:52Z",
+            "verificationMethod" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ#z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "jws" : "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJFZERTQSJ9..jb5tvJHe2yjKbxKM2XosBLrO0-ZAikK3LsUi1D-Sqlf-bFvWY3m4vrqEBJ3t0Qn3zAl0-Q4QVy5geOHFML_HDg"
+          },
+          "credentialSubject" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "firstName" : "Martin",
+            "lastName" : "Farkas"
+          },
+          "year" : "2022",
+          "month" : "12",
+          "consumption" : 4000
+        }, {
+          "type" : [ "VerifiableCredential", "ProofOfActualGasConsumptionCredential" ],
+          "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://www.w3.org/2018/credentials/examples/v1", "https://w3id.org/security/suites/jws-2020/v1" ],
+          "id" : "urn:uuid:d1677238-ac33-4f7a-a645-049905329f28",
+          "issuer" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ"
+          },
+          "issuanceDate" : "2023-05-25T20:19:13Z",
+          "issued" : "2023-05-25T20:19:13Z",
+          "validFrom" : "2023-05-25T20:19:13Z",
+          "proof" : {
+            "type" : "JsonWebSignature2020",
+            "creator" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "created" : "2023-05-25T20:19:13Z",
+            "verificationMethod" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ#z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "jws" : "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJFZERTQSJ9..fm-LgE6ZyLepWCPxtVJqRF8nd8MaCc0RadHi9QF8vr2fXu93KuxBX4dbDmW2RFXDNjF-nvmIsfYo0_AWMHZpAw"
+          },
+          "credentialSubject" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "firstName" : "Martin",
+            "lastName" : "Farkas"
+          },
+          "year" : "2023",
+          "month" : "01",
+          "consumption" : 4000
+        }, {
+          "type" : [ "VerifiableCredential", "ProofOfActualGasConsumptionCredential" ],
+          "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://www.w3.org/2018/credentials/examples/v1", "https://w3id.org/security/suites/jws-2020/v1" ],
+          "id" : "urn:uuid:5c1e74a0-2c1a-4ecb-8523-abca187e7f63",
+          "issuer" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ"
+          },
+          "issuanceDate" : "2023-05-25T20:19:40Z",
+          "issued" : "2023-05-25T20:19:40Z",
+          "validFrom" : "2023-05-25T20:19:40Z",
+          "proof" : {
+            "type" : "JsonWebSignature2020",
+            "creator" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "created" : "2023-05-25T20:19:40Z",
+            "verificationMethod" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ#z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "jws" : "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJFZERTQSJ9..wxPcxaXlapfb3I1tErc3PHih8fumiPMEVnRDv9qnY27aXby3OkqcqbMkywhIVXrEMrGFqLEoN-k8VC0WvfWkAA"
+          },
+          "credentialSubject" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "firstName" : "Martin",
+            "lastName" : "Farkas"
+          },
+          "year" : "2023",
+          "month" : "02",
+          "consumption" : 4000
+        }, {
+          "type" : [ "VerifiableCredential", "ProofOfActualGasConsumptionCredential" ],
+          "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://www.w3.org/2018/credentials/examples/v1", "https://w3id.org/security/suites/jws-2020/v1" ],
+          "id" : "urn:uuid:fe237f45-5238-49cd-8d5e-7d1a6758afdc",
+          "issuer" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ"
+          },
+          "issuanceDate" : "2023-05-25T20:19:49Z",
+          "issued" : "2023-05-25T20:19:49Z",
+          "validFrom" : "2023-05-25T20:19:49Z",
+          "proof" : {
+            "type" : "JsonWebSignature2020",
+            "creator" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "created" : "2023-05-25T20:19:49Z",
+            "verificationMethod" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ#z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "jws" : "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJFZERTQSJ9..S0UeKHK0YbgDWrpaoa6A78n5lRap8r-5NKRsw0BLhBV1FyV5UyL5720lskK5EO-oTVjW_Ujqa3AX0YI6j3GMCg"
+          },
+          "credentialSubject" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "firstName" : "Martin",
+            "lastName" : "Farkas"
+          },
+          "year" : "2023",
+          "month" : "03",
+          "consumption" : 4000
+        }, {
+          "type" : [ "VerifiableCredential", "ProofOfActualGasConsumptionCredential" ],
+          "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://www.w3.org/2018/credentials/examples/v1", "https://w3id.org/security/suites/jws-2020/v1" ],
+          "id" : "urn:uuid:5d3e0218-f1d0-402c-9b5d-a60d359d4529",
+          "issuer" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ"
+          },
+          "issuanceDate" : "2023-05-25T20:19:59Z",
+          "issued" : "2023-05-25T20:19:59Z",
+          "validFrom" : "2023-05-25T20:19:59Z",
+          "proof" : {
+            "type" : "JsonWebSignature2020",
+            "creator" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "created" : "2023-05-25T20:19:59Z",
+            "verificationMethod" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ#z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "jws" : "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJFZERTQSJ9..AFnTkKgGWYwJNXUdX7OR4AK0j40nkKGwFIuNFJJnayUNVxicztHk-E6aWH2PWpvfEtiDHkWIgdw85PTjqRN5DA"
+          },
+          "credentialSubject" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "firstName" : "Martin",
+            "lastName" : "Farkas"
+          },
+          "year" : "2023",
+          "month" : "04",
+          "consumption" : 4000
+        }, {
+          "type" : [ "VerifiableCredential", "ChangedWorkcapacityCredential" ],
+          "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://www.w3.org/2018/credentials/examples/v1", "https://w3id.org/security/suites/jws-2020/v1" ],
+          "id" : "urn:uuid:15722e1e-1268-454f-8758-06ac799fab70",
+          "issuer" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ"
+          },
+          "issuanceDate" : "2023-05-25T19:52:36Z",
+          "issued" : "2023-05-25T19:52:36Z",
+          "validFrom" : "2023-05-25T19:52:36Z",
+          "proof" : {
+            "type" : "JsonWebSignature2020",
+            "creator" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "created" : "2023-05-25T19:52:36Z",
+            "verificationMethod" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ#z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "jws" : "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJFZERTQSJ9..o_nwMtR--HfuXWW13fOW8vL3hDd16nLbEDeD6Cn8vbCwrGIwr9IH95HDavEikgYK3tuEw8mNpJ0esw5TojeVCw"
+          },
+          "credentialSubject" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "firstName" : "Martin",
+            "lastName" : "Farkas"
+          },
+          "category" : "D1",
+          "percentage" : 50
+        }, {
+          "type" : [ "VerifiableCredential", "Policy" ],
+          "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://www.w3.org/2018/credentials/examples/v1", "https://w3id.org/security/suites/jws-2020/v1" ],
+          "id" : "urn:uuid:35d774dd-d6a0-4586-a87b-6538d98f35fb",
+          "issuer" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ"
+          },
+          "issuanceDate" : "2023-05-25T21:45:09Z",
+          "issued" : "2023-05-25T21:45:09Z",
+          "validFrom" : "2023-05-25T21:45:09Z",
+          "proof" : {
+            "type" : "JsonWebSignature2020",
+            "creator" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "created" : "2023-05-25T21:45:09Z",
+            "verificationMethod" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ#z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "jws" : "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJFZERTQSJ9..WMc_ynCOnbc8akwrbCRr1p_XJFHmgZjsm_g2cch-_tcX1ghVXUircm2SpAUn8VZI_4YBF9Tfg8CyZlZKqe_WAA"
+          },
+          "credentialSubject" : {
+            "id" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+            "firstName" : "Martin",
+            "lastName" : "Farkas"
+          },
+          "policy" : "package gasSupport\n\nimport future.keywords.contains\nimport future.keywords.if\nimport future.keywords.in\n\ndefault policyParameters := {\n\t\"thresholds\": {\n\t\t\"rollingConsumption\": {\n\t\t\t\"mid\": 3000,\n\t\t\t\"high\": 7000,\n\t\t},\n\t\t\"currentSaving\": {\n\t\t\t\"low\": 250,\n\t\t\t\"mid\": 500,\n\t\t\t\"high\": 1000,\n\t\t},\n\t},\n\t\"supports\": {\n\t\t#rows: rollingConsumption\n\t\t#cols: currentSaving\n\t\t\"low\": {\"low\": [\"percent\", 10], \"mid\": [\"percent\", 10], \"high\": [\"percent\", 10]},\n\t\t\"mid\": {\"low\": [\"percent\", 10], \"mid\": [\"percent\", 10], \"high\": [\"percent\", 10]},\n\t\t\"high\": {\"low\": [\"percent\", 10], \"mid\": [\"percent\", 10], \"high\": [\"percent\", 10]},\n\t},\n\t\"socialSupports\": {\"ChangedWorkcapacity\": {\n\t\t\"credentialType\": \"ChangedWorkcapacityCredential\",\n\t\t\"support\": [\"nominal\", 1000],\n\t}},\n}\n\nrollingConsumption := value if {\n\tpastConsumptionCreds := [pastConsumptionCred |\n\t\tsome cred in input.credentialData.verifiableCredential\n\t\tcred.type[_] == \"ProofOfActualGasConsumptionCredential\"\n\t\t[currentYear, currentMonth, _] := time.date(time.now_ns())\n\t\tmonths := numbers.range(1, 12)\n\t\tmonth := months[x]\n\t\t((((currentYear * 12) + currentMonth) - 1) - 12) + month == (to_number(cred.year) * 12) + to_number(cred.month)\n\t\tpastConsumptionCred := cred\n\t]\n\tcount(pastConsumptionCreds) == 12\n\tpastConsumptionValues := [value | value := pastConsumptionCreds[_].consumption]\n\tcount(pastConsumptionValues) == 12\n\tvalue := sum(pastConsumptionValues) / count(pastConsumptionCreds)\n}\n\nclassConsumption := \"high\" if rollingConsumption >= policyParameters.thresholds.rollingConsumption.high\n\nclassConsumption := \"mid\" if {\n\trollingConsumption >= policyParameters.thresholds.rollingConsumption.mid\n\trollingConsumption < policyParameters.thresholds.rollingConsumption.high\n}\n\nclassConsumption := \"low\" if rollingConsumption < policyParameters.thresholds.rollingConsumption.mid\n\ncurrentConsumption := input.parameter.consumption\n\nclassSaving := \"high\" if {\n\tpolicyParameters.thresholds.currentSaving.high < rollingConsumption - currentConsumption\n}\n\nelse := \"mid\" if {\n\tpolicyParameters.thresholds.currentSaving.mid < rollingConsumption - currentConsumption\n}\n\nelse := \"low\" if {\n\tpolicyParameters.thresholds.currentSaving.low < rollingConsumption - currentConsumption\n}\n\napplySupport(support, base) := base * multiplier if {\n\t[type, percent] := support\n\ttype == \"percent\"\n\tmultiplier := 1 - (0.01 * percent)\n}\n\napplySupport(support, base) := base - value if {\n\t[type, value] := support\n\ttype == \"nominal\"\n}\n\ncurrentPrice := input.parameter.price\n\npaymentBase := res if {\n\tcurrentPrice.unit == \"HUF\"\n\tres := currentConsumption * currentPrice.amount\n}\n\npaymentAfterSavings := applySupport(policyParameters.supports[classConsumption][classSaving], paymentBase)\n\napplySupports(supports, Value) := result if {\n\tnominalSupports := [value |\n\t\t[type, value] := supports[_]\n\t\ttype == \"nominal\"\n\t]\n\tpercentSupports := [value |\n\t\t[type, value] := supports[_]\n\t\ttype == \"percent\"\n\t]\n\tresult := (Value - sum(nominalSupports)) - (Value * sum(percentSupports))\n}\n\n\npaymentAfterSupports := value if {\n\tsocialSupports := [ support |\n\t\tcred := input.credentialData.verifiableCredential[_]\n\t\tcred.type[_] == policyParameters.socialSupports[x].credentialType\n\t\tsupport := policyParameters.socialSupports[x].support\n\t]\n\tvalue := applySupports(socialSupports, paymentAfterSavings)\n}\n\nsupportAmount := paymentBase - paymentAfterSupports\n\ndefault allow := false\n\nallow if {\n\tsupportAmount := paymentBase - paymentAfterSupports\n\tsupportAmount == input.parameter.expectedSupportAmmount\n}\n"
+        } ],
+        "proof" : {
+          "type" : "JsonWebSignature2020",
+          "creator" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+          "created" : "2023-05-25T21:46:08Z",
+          "proofPurpose" : "authentication",
+          "verificationMethod" : "did:key:z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ#z6Mktjgke5DKuEVzcUwHjKo2wSQK515Yn9zgZiuCbjEQkeyQ",
+          "jws" : "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJFZERTQSJ9..TENHQKmw852k_M5VfHJZcapztE5sz6dtpl1JBkCfwP5yOG9YUvw6Lo4yyhaxcvCJTY3AIpGTpwXcUnH1N_z4Cg"
+        }
+      },
+    "parameter": {
+        "consumption": 985,
+        "price": {
+            "amount": 747,
+            "unit": "HUF"
+        },
+        "expectedSupportAmmount": 74579.5
+    }
+}
