@@ -1,76 +1,35 @@
 {
   "main": {
-    "id": "0e274bac9b8fe2de",
+    "id": "95c81dc74869e729",
     "type": "split",
     "children": [
       {
-        "id": "62c2f2754f7cc48f",
+        "id": "7700d6d6d466b03c",
         "type": "tabs",
         "children": [
           {
-            "id": "f44517b44fb753b0",
+            "id": "1e758b3c095e1cca",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "0. session.md",
-                "mode": "source",
-                "source": false
-              }
-            }
-          },
-          {
-            "id": "f9e82741c383ca25",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Tasks.md",
-                "mode": "source",
-                "source": false
-              }
-            }
-          },
-          {
-            "id": "62821f2900fbfe4b",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Questions.md",
-                "mode": "source",
-                "source": false
-              }
-            }
-          },
-          {
-            "id": "1d9e78364dcc8eeb",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Outline.md",
-                "mode": "source",
-                "source": false
-              }
+              "type": "empty",
+              "state": {}
             }
           }
-        ],
-        "currentTab": 3
+        ]
       }
     ],
     "direction": "vertical"
   },
   "left": {
-    "id": "10130437c3ac8ecd",
+    "id": "c9a67a97f659ad81",
     "type": "split",
     "children": [
       {
-        "id": "c7a27377cf7fe038",
+        "id": "26fda8485af0cb68",
         "type": "tabs",
         "children": [
           {
-            "id": "df6d805d8001fa43",
+            "id": "152d3e2e362dbcfa",
             "type": "leaf",
             "state": {
               "type": "file-explorer",
@@ -80,7 +39,7 @@
             }
           },
           {
-            "id": "82e5e2cf02f623b4",
+            "id": "d335d7da4f6485c8",
             "type": "leaf",
             "state": {
               "type": "search",
@@ -95,7 +54,7 @@
             }
           },
           {
-            "id": "42f0b31663e5bb65",
+            "id": "b4647d3305c0fee7",
             "type": "leaf",
             "state": {
               "type": "bookmarks",
@@ -109,20 +68,19 @@
     "width": 300
   },
   "right": {
-    "id": "ff228af2d328ab51",
+    "id": "c1a1d3f7fe233fc4",
     "type": "split",
     "children": [
       {
-        "id": "b7c10f88de3564b1",
+        "id": "28de6687aeed5973",
         "type": "tabs",
         "children": [
           {
-            "id": "c861d62bf9074215",
+            "id": "b68817a1634fbb52",
             "type": "leaf",
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Outline.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -134,19 +92,18 @@
             }
           },
           {
-            "id": "f1647f3bd59ee81e",
+            "id": "a8a002f1bbff3d7f",
             "type": "leaf",
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Outline.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
             }
           },
           {
-            "id": "d0f0437e4b3fac58",
+            "id": "96e28203f8057457",
             "type": "leaf",
             "state": {
               "type": "tag",
@@ -157,13 +114,11 @@
             }
           },
           {
-            "id": "1e51a6afe09b76f2",
+            "id": "6b9fb95e05ed96cf",
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {
-                "file": "Outline.md"
-              }
+              "state": {}
             }
           }
         ]
@@ -183,13 +138,6 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "1d9e78364dcc8eeb",
-  "lastOpenFiles": [
-    "1. Session.md",
-    "0. session.md",
-    "Tasks.md",
-    "2. Session.md",
-    "Outline.md",
-    "Questions.md"
-  ]
+  "active": "1e758b3c095e1cca",
+  "lastOpenFiles": []
 }
