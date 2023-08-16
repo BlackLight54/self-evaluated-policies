@@ -10,3 +10,5 @@ How does a archetypical use case look like? How do the steps of this use case re
 ## Translating to my use-case 
 How does this arcetipical use-case relate to our use-case?
 # What dialect of datalog does circutree use? Do we need to build a transpiler or a compiler?
+
+# How do we decompose the model into smaller computations? What attributes of rego do we lose, and what generality do we gain?
