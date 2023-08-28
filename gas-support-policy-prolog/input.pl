@@ -1,0 +1,12 @@
+monthly_consumption(1,150).
+monthly_consumption(2,150).
+monthly_consumption(3,150).
+monthly_consumption(4,150).
+monthly_consumption(5,150).
+monthly_consumption(6,150).
+monthly_consumption(7,150).
+monthly_consumption(8,150).
+monthly_consumption(9,150).
+monthly_consumption(10,150).
+monthly_consumption(11,150).
+monthly_consumption(12,150).

@@ -1,10 +1,10 @@
 # Circuitree
 ## Circiutree-t futtatni 
-- [ ] Rust projektel hogy működnek?
-- [ ] Cargo projektet futtatni
-- [ ] Csilling Bálintot megkérni, segítsen 
-- [ ] Normál példakódot futtatni
-- [ ] Comparison constraint-es példakódot futtatni
+- [x] Rust projektel hogy működnek?
+- [x] Cargo projektet futtatni
+- [x] Csilling Bálintot megkérni, segítsen 
+- [x] Normál példakódot futtatni
+- [x] Comparison constraint-es példakódot futtatni
 ## Meaningful questions about Circuitree
 
 # Open Policy Agent / Rego / Datalog 
