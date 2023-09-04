@@ -13,6 +13,7 @@
             "cwd": "${workspaceRoot}",
             "startupQuery": "start",
             "stopOnEntry": false,
+            "internalConsoleOptions": "neverOpen",
             "traceCmds": {
                 "continue": [
                     "leap",
