@@ -14,3 +14,5 @@ monthly_consumption(12,2000).
 currentConsumption(1400).
 
 currentPrice(747,'HUF').
+
+inputPayment(931220).

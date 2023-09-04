@@ -91,15 +91,10 @@ applySocialSupports(Input,[], Input).
 applySocialSupports(Input,[(_,SupportType,SupportValue)|CredsTail],Result):-
     applySupport(Input, SupportType, SupportValue,Output),
     applySocialSupports(Output,CredsTail,Result).
-start:- 
+
+calculatedPayment(PaymentAfterSocialSupports):-
     monthly_consumptions(Consumptions),
     valid_monthly_consumptions(Consumptions),
-    sum_of_monthly_consumptions(Consumptions,Sum),
-    rolling_consumption(Consumptions, Rolling_consumption),
-    write('Sum: '),
-    writeln(Sum),
-    write('Rolling cons: '),
-    writeln(Rolling_consumption),
     consumptionClass(Consumptions,RollingClass),
     write('ConsumptionClass: '),
     writeln(RollingClass),
@@ -117,7 +112,16 @@ start:-
     writeln(SocialCreds),
     applySocialSupports(PaymentAfterSavings,SocialCreds,PaymentAfterSocialSupports),
     write('Payment after Social supports: '),
-    writeln(PaymentAfterSocialSupports),
+    writeln(PaymentAfterSocialSupports).
+
+inputPaymentOk:-
+    calculatedPayment(Payment),
+    inputPayment(Payment).
+
+start:- 
+    calculatedPayment(_),
+    inputPaymentOk,
+    writeln('Input payment and calcualted payment match!'),
     halt(0).
 
 
