@@ -5,15 +5,22 @@
         {
             "name": "Debug Prolog Files",
             "type": "prolog",
-            "request": "launch",
-            "runtimeExecutable": "C:/Program files/swipl/bin/swipl",
+            "request": "",
             "runtimeArgs": [],
             "env": {},
-            "program": ".\\gas-support-policy-prolog\\policy.pl",
             "cwd": "${workspaceRoot}",
             "startupQuery": "start",
             "stopOnEntry": false,
-            "internalConsoleOptions": "neverOpen",
+            "linux": {
+                // "runtimeExecutable": "/usr/local/bin/gprolog",
+                "runtimeExecutable": "/usr/bin/swipl",
+                "program": "./gas-support-policy-prolog/policy.pl",
+            },
+            "windows": {
+                "runtimeExecutable": "C:\\Program Files\\swipl\\bin\\swipl.exe",
+                "program": ".\\gas-support-policy-prolog\\policy.pl",
+            },
+            "internalConsoleOptions": "openOnSessionStart",
             "traceCmds": {
                 "continue": [
                     "leap",

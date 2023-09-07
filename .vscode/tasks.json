@@ -1,0 +1,19 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run Prolog",
+            "type": "shell",
+            "command": "swipl",
+            "args": [
+                "-s",
+                "./gas-support-policy-prolog/policy.pl"
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
