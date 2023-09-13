@@ -1,3 +1,4 @@
+% input.pl
 monthly_consumption(1,2001).
 monthly_consumption(2,2001).
 monthly_consumption(3,2001).

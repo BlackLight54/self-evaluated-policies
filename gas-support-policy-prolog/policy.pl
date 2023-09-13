@@ -1,3 +1,4 @@
+% policy.pl 
 :- include('./input.pl').
 :- include('./matrix.pl').
 
@@ -10,60 +11,51 @@
 % 6. apply social credential based support 
 
 % === 1. Aggregate past consumptions ===
-monthly_consumptions(Monthly_consumptions) :- findall((Month,Amount), monthly_consumption(Month,Amount), Monthly_consumptions).
+monthlyConsumptions(MonthlyConsumptions) :- findall((Month,Amount), monthly_consumption(Month,Amount), MonthlyConsumptions).
 
-% only true if the monhtly consumptions are between 1 and 12, there are twelwe of them, and they are all different, where montly consumption is an array of (month, amount) tuples
-valid_monthly_consumptions(Monthly_consumptions) :-
-    length(Monthly_consumptions, 12),
-    valid_monthly_consumptions(Monthly_consumptions, []).
-
-valid_monthly_consumptions([], _).
-valid_monthly_consumptions([(Month,_)|T], Months) :-
-    \+ member(Month, Months), % should we remove this negation?
-    valid_monthly_consumptions(T, [Month|Months]).
-
-% sum op monthly_consumptions
-sum_of_monthly_consumptions([],0).
-sum_of_monthly_consumptions([(_,Amount)|T], Sum) :-
-    sum_of_monthly_consumptions(T, Rest),
+% sum op monthlyConsumptions
+sumOfMonthlyConsumptions([],0).
+sumOfMonthlyConsumptions([(_,Amount)|T], Sum) :-
+    sumOfMonthlyConsumptions(T, Rest),
     Sum is Amount + Rest.
 
 % === 2. Calculate rolling consumption ===
-rolling_consumption(Consumptions, Result):- 
-    sum_of_monthly_consumptions(Consumptions,Sum),
+rollingConsumption(Result):- 
+    monthlyConsumptions(Consumptions),
+    sumOfMonthlyConsumptions(Consumptions,Sum),
     Result is Sum / 12.
 
 % === 3. classify using rolling consumption ===
-consumptionClass(Consumptions, Class):-
-    rolling_consumption(Consumptions, Rolling_consumption),
-    calcConsumptionClass(Rolling_consumption, Class).
+consumptionClass(Class):-
+    rollingConsumption(RollingConsumption),
+    calcConsumptionClass(RollingConsumption, Class).
     
-calcConsumptionClass(Rolling_consumption,Class):-
+calcConsumptionClass(RollingConsumption,Class):-
     rolling_treshold('high',Treshold),
-    Rolling_consumption >= Treshold,
+    RollingConsumption >= Treshold,
     Class = 'high';
     rolling_treshold('mid',Treshold),
-    Rolling_consumption >= Treshold,
+    RollingConsumption >= Treshold,
     Class = 'mid';
     Class = 'low'.
 
 % === 4. classify using savings ===
-savingsClass(Class,Consumptions):-
+savingsClass(Class):-
     currentConsumption(Consumption),
-    rolling_consumption(Consumptions, Rolling_consumption),
-    calcSavingsClass(Rolling_consumption,Consumption,Class).
+    rollingConsumption(RollingConsumption),
+    calcSavingsClass(RollingConsumption,Consumption,Class).
 
-calcSavingsClass(Rolling_consumption,Consumption,Class):-
+calcSavingsClass(RollingConsumption,Consumption,Class):-
     savings_treshold('high',Treshold),
-    CurrentSaving is Rolling_consumption - Consumption,
+    CurrentSaving is RollingConsumption - Consumption,
     CurrentSaving > Treshold,
     Class = 'high';
     savings_treshold('mid',Treshold),
-    CurrentSaving is Rolling_consumption - Consumption,
+    CurrentSaving is RollingConsumption - Consumption,
     CurrentSaving > Treshold,
     Class = 'mid';
     savings_treshold('low',Treshold),
-    CurrentSaving is Rolling_consumption - Consumption,
+    CurrentSaving is RollingConsumption - Consumption,
     CurrentSaving > Treshold,
     Class = 'low';
     Class = 'none'.
@@ -80,48 +72,65 @@ applySupport(Input, 'percent', Value, Output):-
     AmountToBeSubtracted is Input * Value div 100,
     Output is Input - AmountToBeSubtracted.
 
-applySavingsSupport(Input, RollingClass, SavingsClass, Output):-
+applySavingsSupport(Output):-
+    paymentBase(Input), 
+    savingsClass(SavingsClass),
+    consumptionClass(RollingClass),
     support_matrix(RollingClass, SavingsClass, Type, Value),
     applySupport(Input, Type, Value, Output).
 
 % === 6. Apply social standing based support ===
 socialCreds(Creds) :- findall((CredType,SupportType,SupportValue), social_suport(CredType,SupportType,SupportValue), Creds).
 
+applySocialSupports(Result):-
+    applySavingsSupport(Input),
+    socialCreds(Creds),
+    applySocialSupports(Input,Creds,Result).
 applySocialSupports(Input,[], Input).
 applySocialSupports(Input,[(_,SupportType,SupportValue)|CredsTail],Result):-
     applySupport(Input, SupportType, SupportValue,Output),
     applySocialSupports(Output,CredsTail,Result).
 
-calculatedPayment(PaymentAfterSocialSupports):-
-    monthly_consumptions(Consumptions),
-    valid_monthly_consumptions(Consumptions),
-    consumptionClass(Consumptions,RollingClass),
-    write('ConsumptionClass: '),
-    writeln(RollingClass),
-    savingsClass(SavingsClass,Consumptions),
-    write('Savings class: '),
-    writeln(SavingsClass),
-    paymentBase(BasePayment),
-    write('Base payment : '),
-    writeln(BasePayment),
-    applySavingsSupport(BasePayment,RollingClass,SavingsClass, PaymentAfterSavings),
-    write('Payment after savings: '),
-    writeln(PaymentAfterSavings),
-    socialCreds(SocialCreds),
-    write('SocialCreds:'),
-    writeln(SocialCreds),
-    applySocialSupports(PaymentAfterSavings,SocialCreds,PaymentAfterSocialSupports),
-    write('Payment after Social supports: '),
-    writeln(PaymentAfterSocialSupports).
+calculatedPayment(Payment):-
+    applySocialSupports(Payment).
 
 inputPaymentOk:-
     calculatedPayment(Payment),
     inputPayment(Payment).
 
+writeSteps:-
+    monthlyConsumptions(MonthlyConsumptions),
+    write('Monthly consumptions:'),nl,
+    write(MonthlyConsumptions),nl,
+    rollingConsumption(RollingConsumption),
+    write('Rolling consumption:'),nl,
+    write(RollingConsumption),nl,
+    consumptionClass(ConsumptionClass),
+    write('Consumption class:'),nl,
+    write(ConsumptionClass),nl,
+    savingsClass(SavingsClass),
+    write('Savings class:'),nl,
+    write(SavingsClass),nl,
+    paymentBase(Payment),
+    write('Payment base:'),nl,
+    write(Payment),nl,
+    support_matrix(ConsumptionClass, SavingsClass, Type, Value),
+    write('Value in savings support matrix:'),nl,
+    write((ConsumptionClass, SavingsClass, Type, Value)),nl,
+    applySavingsSupport(PaymentAfterSavings),
+    write('Payment after savings support:'),nl,
+    write(PaymentAfterSavings),nl,
+    socialCreds(Creds),
+    write('Social creds:'),nl,
+    write(Creds),nl,
+    applySocialSupports(PaymentAfterSocialSupports),
+    write('Payment after social supports:'),nl,
+    write(PaymentAfterSocialSupports).
+
 start:- 
     calculatedPayment(_),
     inputPaymentOk,
-    writeln('Input payment and calcualted payment match!'),
+    write('Input payment and calcualted payment match!'),nl,
     halt(0).
 
 
