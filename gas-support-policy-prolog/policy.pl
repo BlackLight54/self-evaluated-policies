@@ -75,15 +75,15 @@ applySocialSupports(Input,[(_,SupportType,SupportValue)|CredsTail],Result):-
 applySocialSupports(Input,[], Input).
 
 endPrice(Price):-
-    monthlyConsumptions(MonthlyConsumptions),!,
-    sumOfMonthlyConsumptions(MonthlyConsumptions,Sum),!,
-    rollingConsumption(Sum,RollingConsumption),!,
-    currentConsumption(Consumption),!,
-    consumptionClass(RollingConsumption,ConsumptionClass),!,
-    savingsClass(RollingConsumption,Consumption,SavingsClass),!,
-    priceBase(PriceBase),!,
-    applySavingsSupport(PriceBase, SavingsClass, ConsumptionClass, PriceAfterSavings),!,
-    socialCreds(Creds),!,
+    monthlyConsumptions(MonthlyConsumptions),
+    sumOfMonthlyConsumptions(MonthlyConsumptions,Sum),
+    rollingConsumption(Sum,RollingConsumption),
+    currentConsumption(Consumption),
+    consumptionClass(RollingConsumption,ConsumptionClass),
+    savingsClass(RollingConsumption,Consumption,SavingsClass),
+    priceBase(PriceBase),
+    applySavingsSupport(PriceBase, SavingsClass, ConsumptionClass, PriceAfterSavings),
+    socialCreds(Creds),
     applySocialSupports(PriceAfterSavings,Creds,Price).
 
 inputPriceOk:-
@@ -113,7 +113,7 @@ writeSteps:-
     write('Price: '), write(Price),nl.
 
 start:- 
-    calculatedPrice(_),
+    endPrice(_),
     inputPriceOk,
     write('Input price and calcualted price match!'),nl,
     halt(0).
