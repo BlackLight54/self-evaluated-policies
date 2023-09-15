@@ -87,7 +87,7 @@ endPrice(Price):-
     applySocialSupports(PriceAfterSavings,Creds,Price).
 
 inputPriceOk:-
-    calculatedPrice(Price),
+    endPrice(Price),
     inputPrice(Price).
 
 writeSteps:-
