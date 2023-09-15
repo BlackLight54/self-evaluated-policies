@@ -50,38 +50,38 @@ prove(A):-
     print_tree_pretty(Tree).
 
 % write a JSON representation of the proof tree to the terminal
-print_tree(Tree):-
-    print_tree(Tree, 0).
-print_tree([true], Indent):-
+print_tree_JSON(Tree):-
+    print_tree_JSON(Tree, 0).
+print_tree_JSON([true], Indent):-
     tab(Indent),write("{"),nl,
     tab(Indent),tab(2),write("\"goal\":true"), nl,
     tab(Indent),write("}").
-print_tree([ Children :> Goal <> U >< S], Indent):- 
+print_tree_JSON([ Children :> Goal <> U >< S], Indent):- 
     tab(Indent),write("{"),nl,
     tab(Indent),tab(2),write("\"goal\": \""),write(Goal),write("\","),nl,
     tab(Indent),tab(2),write("\"unification\": \""),write(U),write("\","),nl,
     tab(Indent),tab(2),write("\"substitution\": \""),write(S),write("\","),nl,
     tab(Indent),tab(2),write("\"children\": ["), nl,
     NewIndent is Indent + 4,
-    print_children(Children, NewIndent),nl,
+    print_children_JSON(Children, NewIndent),nl,
     tab(Indent),tab(2),write("]"), nl,
     tab(Indent),write("}").
 
-print_children([], _).
-print_children([Child],Indent):-
-    print_tree([Child], Indent).
-print_children([Child|OtherChildren], Indent):- 
+print_children_JSON([], _).
+print_children_JSON([Child],Indent):-
+    print_tree_JSON([Child], Indent).
+print_children_JSON([Child|OtherChildren], Indent):- 
     nl,
-    print_tree([Child], Indent),
+    print_tree_JSON([Child], Indent),
     write(","),
-    print_children(OtherChildren, Indent).
+    print_children_JSON(OtherChildren, Indent).
 
 % print a tree representation of the proof tree to the terminal
 print_tree_pretty(Tree):-
     print_tree_pretty(Tree, 0).
 print_tree_pretty([true], Indent):-
     tab(Indent),
-    write("< ") 
+    write("< "),
     write(true), nl.
 print_tree_pretty([ Children :> Goal <> U >< S], Indent):- 
     tab(Indent), 
