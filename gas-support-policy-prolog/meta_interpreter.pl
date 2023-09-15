@@ -1,16 +1,20 @@
 :- include("./policy.pl").
 
-% Proof tree
-:- op(750, xfy, :>).
+% operator for proof tree nodes,
+% means that the left side is a list of subgoals and the right side is the goal,
+% i.e. [subgoal1, subgoal2, ...] :> goal
+:- op(750, xfy, :>). 
 
-% end(leaf) of the proof tree
+% Meta-interpreter
+%
+% base case, end(leaf) of the proof tree
 mi_proof_tree(true, [true]).
 % conjunction
 mi_proof_tree((A, B), Tree) :-
     !,
     mi_proof_tree(A, TreeA),
     mi_proof_tree(B, TreeB),
-    append([TreeA, TreeB], Tree).
+    append([TreeA, TreeB], Tree). % is append part of ISO prolog? If not, its source is just a few clauses
 % disjunciton
 mi_proof_tree((A; _), Tree) :-
     mi_proof_tree(A, Tree).
@@ -24,9 +28,9 @@ mi_proof_tree(A, Tree) :-
     call(A).
 % general case
 mi_proof_tree(G, [Tree :> G]) :-
-    G \= true,
-    G \= (_,_),
-    G \= (_\=_),
+    % G \= true, %  predicate_property(A, built_in) already filters these, but i don't know if its part of ISO prolog
+    % G \= (_,_),
+    % G \= (_\=_), 
     clause(G, B),
     mi_proof_tree(B, Tree).
 
@@ -35,11 +39,9 @@ print_proof_tree(A):-
     mi_proof_tree(A, Tree),
     write("Proof tree: "), write(Tree), nl.
 
-
 prove(A):-
     mi_proof_tree(A,Tree),
     print_tree(Tree).
-
 
 % print a tree representation of the proof tree to the terminal
 print_tree(Tree):-
