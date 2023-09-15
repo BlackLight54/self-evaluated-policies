@@ -1,5 +1,4 @@
 :- include("./policy.pl").
-:- include("./testprograms.pl").
 
 % Proof tree
 :- op(750, xfy, :>).
@@ -18,9 +17,9 @@ mi_proof_tree((A; _), Tree) :-
 mi_proof_tree((_; B), Tree) :-
     mi_proof_tree(B, Tree).
 % handle built-in predicates
-mi_proof_tree(A, Trace) :-
+mi_proof_tree(A, Tree) :-
     predicate_property(A, built_in),
-    Trace = [[true] :> A],
+    Tree = [[true] :> A],
     !,
     call(A).
 % general case
@@ -31,17 +30,18 @@ mi_proof_tree(G, [Tree :> G]) :-
     clause(G, B),
     mi_proof_tree(B, Tree).
 
+% simply print the proof tree to the terminal
 print_proof_tree(A):- 
-    mi_proof_tree(A, Trace),
-    write("Proof tree: "), write(Trace), nl.
+    mi_proof_tree(A, Tree),
+    write("Proof tree: "), write(Tree), nl.
 
 
 prove(A):-
-    mi_proof_tree(A,Trace),
-    print_tree(Trace).
+    mi_proof_tree(A,Tree),
+    print_tree(Tree).
 
 
-% 
+% print a tree representation of the proof tree to the terminal
 print_tree(Tree):-
     print_tree(Tree, 0).
 print_tree([true], Indent):-
