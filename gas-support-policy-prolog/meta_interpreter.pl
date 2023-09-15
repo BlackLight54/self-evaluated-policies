@@ -47,16 +47,15 @@ print_tree(Tree):-
 print_tree([true], Indent):-
     tab(Indent), 
     write(true), nl.
-print_tree([Items:>Goal], Indent):- 
+print_tree([Children:>Goal], Indent):- 
     tab(Indent), 
     write(Goal), nl,
     NewIndent is Indent + 4,
-    print_children(Items, NewIndent).
-    % print_tree(NextItem, NewIndent).
+    print_children(Children, NewIndent).
 
 print_children([], _).
-print_children([Item|Items], Indent):- 
-    print_tree([Item], Indent),
-    print_children(Items, Indent).
+print_children([Child|OtherChildren], Indent):- 
+    print_tree([Child], Indent),
+    print_children(OtherChildren, Indent).
 
 
