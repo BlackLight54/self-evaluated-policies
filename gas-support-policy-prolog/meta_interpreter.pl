@@ -64,7 +64,7 @@ print_tree_pretty([true], Indent):-
     tab(Indent),
     write("< "),
     write(true), nl.
-print_tree_pretty([ Children :> Goal <> U >< S], Indent):- 
+print_tree_pretty([state{goal:Goal,unification:U,substitution:S,children:Children}], Indent):- 
     tab(Indent), 
     write( ":> "),
     write(Goal),
