@@ -6,8 +6,8 @@ Sources:
 1. [The Power Of Prolog: A Couple of Meta-interpreters in Prolog](https://www.metalevel.at/acomip/)
 
 ### Goal 
-Goal is to prove the evaluation of a prolog program. This can be done using a proof tree.\[?\]
-To do this, we must interpret the prolog perogram that is being queried, and extract the states that are the nodes of the proof tree.
+The goal is to prove the evaluation of a Prolog program. This can be done using a proof tree.\[?\]
+To do this, we must interpret the Prolog program that is being queried, and extract the states that are the nodes of the proof tree.
 
 ### Interpreters
 "Informally, an interpreter is a program that evaluates programs. Interpretation is pervasive in computer science both from a theoretical and practical perspective, and many programs are interpreters for domain-specific languages. For example, a program reading settings from a configuration file and adjusting itself accordingly is interpreting this "configuration language". "\[1\]
@@ -16,22 +16,22 @@ To do this, we must interpret the prolog perogram that is being queried, and ext
 "An interpreter for a language similar or identical to its own implementation language is called meta-interpreter (MI). An interpreter that can interpret itself is called meta-circular."
 
 ### Why is Prolog especially well suited for meta-interpretation
- - "First and most importantly, Prolog programs can be naturally represented as Prolog terms and are easily inspected and manipulated using built-in mechanisms";"Prolog is a *homoiconic* language. Other homoiconic lanugages: Lisp, machine language, etc."
+ - "First and most importantly, Prolog programs can be naturally represented as Prolog terms and are easily inspected and manipulated using built-in mechanisms"; "Prolog is a *homoiconic* language. Other homoiconic languages: Lisp, machine language, etc."
 
- - "Second, Prolog's implicit computation strategy and all-solutions predicates can be used in interpreters, allowing for concise specifications.";"Other languages with this property: Tcl, PostScript "
+ - "Second, Prolog's implicit computation strategy and all-solutions predicates can be used in interpreters, allowing for concise specifications."; "Other languages with this property: Tcl, PostScript "
 
  - "Third, variables from the object-level (the program to be interpreted) can be treated as variables on the meta-level (the interpreter); therefore, an interpreter can delegate handling of the interpreted program's binding environment to the underlying Prolog engine."; i.e."Prolog is a very simple language; only construct: Head <- Body 
 
- "The aligment of these specific features is unique to Prolog." \[1\]
+ "The alignment of these specific features is unique to Prolog." \[1\]
 
- ### Defintions 
+ ### Definitions 
  - object-level: the level of the program being interpreted
  - meta-level: the level of the meta-interpreter
  - meta-circular: a meta-interpreter that can interpret its own source code
- - abosorbtion: a meta-interpreter uses an implicit language feature
- - reification: a meta-interpreter makes a language feature explcit, observable
+ - absorption: a meta-interpreter uses an implicit language feature
+ - reification: a meta-interpreter makes a language feature explicit, observable
  - meta-call: when a goal is dynamically invoked: `Goal. call(Goal).`. This is available in Prolog out of the box.
- - reflection and introspection: a programs ability to examine itself, available in many other languages, e.g. Java. In Prolog, the main tool for introspeciton among others, which is also a meta-call: `clause(Goal, Body)`
+ - reflection and introspection: a program's ability to examine itself, available in many other languages, e.g. Java. In Prolog, the main tool for introspection among others, which is also a meta-call: `clause(Goal, Body)`
 
 ### clause/2
 True if Head can be unified with a clause head and Body with the corresponding clause body. \[[SWIPL docs](https://www.swi-prolog.org/pldoc/doc_for?object=clause/2)\]
@@ -53,11 +53,11 @@ mi(G,Body) :-                           % general case
     clause(G,Body),
     mi(Body).  
 ```
-This is the most basic meta-interpreter in prolog, it reifies conjunctuion, but its sub-optimal, because it still absorbs most language functions, leads to false choice points (because `mi(true).` unifies with both the first and the third clause ), and cannot handle built-in predicates (because they are private, often precompiled in the specific prolog implementations). 
+This is the most basic meta-interpreter in Prolog, it reifies conjunction, but it is sub-optimal because it still absorbs most language functions, leads to false choice points (because `mi(true).` unifies with both the first and the third clause ), and cannot handle built-in predicates (because they are private, often precompiled in the specific Prolog implementations). 
 
-Still, it shows the basic structure of Prolog meta-interpreters. We will expand on this framework of meta-interpretaion to cosntruct our proof tree, specifically will reify disjunction unification, substitution, bulit-in predicates, and organize these observations into a tree data-structure. We may also reify backtracking, but it isn't nescessary, as our use-case calcualtes a single value. 
+Still, it shows the basic structure of Prolog meta-interpreters. We will expand on this framework of meta-interpretation to cosntruct our proof tree, specifically will reify disjunction unification, substitution, built-in predicates, and organize these observations into a tree data structure. We may also reify backtracking, but it isn't necessary, as our use-case calculates a single value. 
 
-Prolog meta-interpreters can be greatly improved in both performace and complexity (even as short as 2 clauses) by modifying the representation of the object-level program, as shown by \[1\].
+Prolog meta-interpreters can be greatly improved in both performance and complexity (even as short as 2 clauses) by modifying the representation of the object-level program, as shown by \[1\].
 
 ### Meta-interpreter constructing a proof-tree
 
