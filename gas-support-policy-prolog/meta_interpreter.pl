@@ -21,10 +21,9 @@ mi_proof_tree(Goal, [State]) :-
     predicate_property(Goal, built_in), % is this prperty part of ISO prolog?
     !,
     call(Goal),
-    copy_term(Goal, NewGoal),
-    NewGoal = Goal,
+    copy_term(Goal, OriginalGoal),
     findall((Var, Value), (member(Var, Goal), Var = Value), Substitution),
-    State = state{goal:Goal, unification:null, substitution:Substitution, children:[true]}.
+    State = state{goal:Goal, unification:_{goal:OriginalGoal,body:null}, substitution:Substitution, tree:[true]}.
 
 % general case
 mi_proof_tree(Goal, [State]) :-
@@ -32,19 +31,19 @@ mi_proof_tree(Goal, [State]) :-
     % Goal \= (_,_),
     % Goal \= (_\=_), 
     clause(Goal, Body),
-    copy_term((Goal, Body), (NewGoal, NewBody)),
-    NewGoal = Goal,
-    unification_trace(Body, NewBody, Unification),
+    copy_term((Goal, Body), (OriginalGoal, OriginalBody)),
+    % OriginalGoal = Goal,
+    % unification_trace(OriginalBody, Body, Unification),
+    % write("OriginalBody: "),write(OriginalBody), nl,
+    % write("Body: "),write(Body), nl,
+    % write("OriginalGoal: "),write(OriginalGoal), nl,
+    % write("Goal: "), write(Goal), nl,
+
     mi_proof_tree(Body, Tree),
     findall((Var, Value), (member(Var, Goal), Var = Value), Substitution),
-    State = state{goal:Goal,unification:Unification,substitution:Substitution,children:Tree}.
+    State = state{goal:Goal,unification:_{goal:OriginalGoal,body:OriginalBody},substitution:Substitution,tree:Tree}.
 
-    unification_trace(A, B, []) :- var(A), var(B), !.
-unification_trace((A, C), (B, D), [(A, B), (C, D)]) :- !.
-unification_trace(A, B, [(A, B)]).
-
-
-
+    
 
 
 
@@ -64,7 +63,7 @@ print_tree_pretty([true], Indent):-
     tab(Indent),
     write("< "),
     write(true), nl.
-print_tree_pretty([state{goal:Goal,unification:U,substitution:S,children:Children}], Indent):- 
+print_tree_pretty([state{goal:Goal,unification:U,substitution:S,tree:Children}], Indent):- 
     tab(Indent), 
     write( ":> "),
     write(Goal),
