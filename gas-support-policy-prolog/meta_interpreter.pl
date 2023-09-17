@@ -23,7 +23,7 @@ mi_proof_tree(Goal, [State]) :-
     call(Goal),
     copy_term(Goal, OriginalGoal),
     findall((Var, Value), (member(Var, Goal), Var = Value), Substitution),
-    State = state{goal:Goal, unification:_{goal:OriginalGoal,body:null}, substitution:Substitution, tree:[true]}.
+    State = state{goal:Goal, unification:_{goal:OriginalGoal,body:null}, substitution:Substitution, ztree:[true]}.
 
 % general case
 mi_proof_tree(Goal, [State]) :-
@@ -41,8 +41,25 @@ mi_proof_tree(Goal, [State]) :-
 
     mi_proof_tree(Body, Tree),
     findall((Var, Value), (member(Var, Goal), Var = Value), Substitution),
-    State = state{goal:Goal,unification:_{goal:OriginalGoal,body:OriginalBody},substitution:Substitution,tree:Tree}.
+    extract_predicates(OriginalBody,OriginalBodyPredicates),
+    State = state{goal:Goal,unification:_{goal:OriginalGoal,body:OriginalBodyPredicates},substitution:Substitution,ztree:Tree}.
 
+    extract_predicates(Term, PredicatesList) :-
+    % If Term is a conjunction (A, B)
+    (Term = (A, B) ->
+        extract_predicates(A, PredListA),
+        extract_predicates(B, PredListB),
+        append(PredListA, PredListB, PredicatesList);
+    
+    % If Term is a disjunction (A ; B)
+    Term = (A ; B) ->
+        extract_predicates(A, PredListA),
+        extract_predicates(B, PredListB),
+        append(PredListA, PredListB, PredicatesList);
+
+    % If Term is a simple predicate
+    PredicatesList = [Term]
+    ).
     
 
 
@@ -63,7 +80,7 @@ print_tree_pretty([true], Indent):-
     tab(Indent),
     write("< "),
     write(true), nl.
-print_tree_pretty([state{goal:Goal,unification:U,substitution:S,tree:Children}], Indent):- 
+print_tree_pretty([state{goal:Goal,unification:U,substitution:S,ztree:Children}], Indent):- 
     tab(Indent), 
     write( ":> "),
     write(Goal),
