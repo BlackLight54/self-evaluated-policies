@@ -23,22 +23,37 @@ mi_proof_tree((A; _), Tree) :-
 mi_proof_tree((_; B), Tree) :-
     mi_proof_tree(B, Tree).
 % handle built-in predicates
-mi_proof_tree(A, Tree) :-
-    predicate_property(A, built_in),
-    U = uni,
-    S = sub,
-    Tree = [[true] :> A <> U >< S],
+mi_proof_tree(Goal, [[true] :> Goal <> [] >< Substitution]) :-
+    predicate_property(Goal, built_in), % is this prperty part of ISO prolog?
+    % U = [],
+    % S = [],
+    % Tree = [[true] :> A <> U >< S],
     !,
-    call(A).
+    call(Goal),
+    copy_term(Goal, NewGoal),
+    NewGoal = Goal,
+    findall((Var, Value), (member(Var, Goal), Var = Value), Substitution).
+
 % general case
-mi_proof_tree(G, [Tree :> G <> U >< S]) :-
-    % G \= true, %  predicate_property(A, built_in) already filters these, but i don't know if its part of ISO prolog
-    % G \= (_,_),
-    % G \= (_\=_), 
-    clause(G, B),
-    S = sub,
-    U = uni,
-    mi_proof_tree(B, Tree).
+mi_proof_tree(Goal, [Tree :> Goal <> Unification >< Substitution]) :-
+    % Goal \= true, %  predicate_property(A, built_in) already filters these, but i don't know if its part of ISO prolog
+    % Goal \= (_,_),
+    % Goal \= (_\=_), 
+    clause(Goal, Body),
+    copy_term((Goal, Body), (NewGoal, NewBody)),
+    NewGoal = Goal,
+    unification_trace(Body, NewBody, Unification),
+    mi_proof_tree(Body, Tree),
+    findall((Var, Value), (member(Var, Goal), Var = Value), Substitution).
+
+    unification_trace(A, B, []) :- var(A), var(B), !.
+unification_trace((A, C), (B, D), [(A, B), (C, D)]) :- !.
+unification_trace(A, B, [(A, B)]).
+
+
+
+
+
 
 % simply print the proof tree to the terminal
 print_proof_tree(A):- 
@@ -47,7 +62,7 @@ print_proof_tree(A):-
 
 prove(A):-
     mi_proof_tree(A,Tree),
-    print_tree_pretty(Tree).
+    print_tree_JSON(Tree).
 
 % write a JSON representation of the proof tree to the terminal
 print_tree_JSON(Tree):-
