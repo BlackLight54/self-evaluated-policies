@@ -1,4 +1,5 @@
 :- include("./policy.pl").
+:- include("./testprograms.pl").
 :- use_module(library(http/json)).
 
 % Meta-interpreter
@@ -32,37 +33,50 @@ mi_proof_tree(Goal, [State]) :-
     % Goal \= (_\=_), 
     clause(Goal, Body),
     copy_term((Goal, Body), (OriginalGoal, OriginalBody)),
-    % OriginalGoal = Goal,
-    % unification_trace(OriginalBody, Body, Unification),
-    % write("OriginalBody: "),write(OriginalBody), nl,
-    % write("Body: "),write(Body), nl,
-    % write("OriginalGoal: "),write(OriginalGoal), nl,
-    % write("Goal: "), write(Goal), nl,
-
     mi_proof_tree(Body, Tree),
     findall((Var, Value), (member(Var, Goal), Var = Value), Substitution),
     extract_predicates(OriginalBody,OriginalBodyPredicates),
-    State = state{goal:Goal,unification:_{goal:OriginalGoal,body:OriginalBodyPredicates},substitution:Substitution,ztree:Tree}.
+    getTermDictFromTerm(Goal, GoalDict),
+    getTermDictFromTerm(OriginalGoal, OriginalGoalDict),
+    write("GoalDict: "), write(OriginalGoalDict), nl,
+    State = state{
+        goal:Goal,
+        term: GoalDict,
+        unification:_{
+            goal:OriginalGoal,
+            % goalTerm:OriginalGoalDict,
+            body:OriginalBodyPredicates
+            % bodyTerm:OriginalBodyPredicatesDict
+            },
+        substitution:Substitution,
+        ztree:Tree
+        }.
 
-    extract_predicates(Term, PredicatesList) :-
-    % If Term is a conjunction (A, B)
-    (Term = (A, B) ->
-        extract_predicates(A, PredListA),
-        extract_predicates(B, PredListB),
-        append(PredListA, PredListB, PredicatesList);
-    
-    % If Term is a disjunction (A ; B)
-    Term = (A ; B) ->
-        extract_predicates(A, PredListA),
-        extract_predicates(B, PredListB),
-        append(PredListA, PredListB, PredicatesList);
+extract_predicates(Term, PredicatesList) :-
+% If Term is a conjunction (A, B)
+(Term = (A, B) ->
+    extract_predicates(A, PredListA),
+    extract_predicates(B, PredListB),
+    append(PredListA, PredListB, PredicatesList);
 
-    % If Term is a simple predicate
-    PredicatesList = [Term]
-    ).
-    
+% If Term is a disjunction (A ; B)
+Term = (A ; B) ->
+    extract_predicates(A, PredListA),
+    extract_predicates(B, PredListB),
+    append(PredListA, PredListB, PredicatesList);
 
+% If Term is a simple predicate
+PredicatesList = [Term]
+).
 
+getTermDictFromTerm(Term, TermDict):-
+    Term =.. [Name|Args],
+    TermDict = _{name:Name, args:Args}.
+
+getTermDictFromTermList([], []).
+getTermDictFromTermList([Term|OtherTerms], [TermDict|OtherTermDicts]):-
+    getTermDictFromTerm(Term, TermDict),
+    getTermDictFromTermList(OtherTerms, OtherTermDicts).
 
 % simply print the proof tree to the terminal
 print_proof_tree(A):- 
