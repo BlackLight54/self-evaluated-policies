@@ -4,7 +4,7 @@ We code elents either by enumeration or hashing
 anne = 1
 bob = 2
 carl = 3
----
+----------------
 parent = 4
 ancestor = 5
 
