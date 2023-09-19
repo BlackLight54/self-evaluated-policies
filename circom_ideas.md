@@ -1,13 +1,14 @@
 # Respresent elements
 We code elents either by enumeration or hashing
 
-anne = 1
-bob = 2
-carl = 3
+- anne = 1
+- bob = 2
+- carl = 3
 
-----------------
-parent = 4
-ancestor = 5
+------
+
+- parent = 4
+- ancestor = 5
 
 
 # How do we check if the proof tree is correct?
@@ -23,6 +24,15 @@ from circuitree, we pass an array of possible predicates and arguments
 `goal_ancestor(unified_preds: int[10], unified_args: int[10][10], goal_args: int[10])`
 
 # Psuedo-code
+
+code for checking a single clause, here the ancesetor/2 for the following program :
+    
+```prolog
+parent(anne, bob).
+parent(bob, carol).
+ancestor(X, Y) :- parent(X, Y).
+ancestor(X, Y) :- parent(X, Z), ancestor(Z, Y).
+
 ```
 goal_ancestor(unified_preds: int[10], unified_args: int[10][10], goal_args: int[10]) {
     // first disjunctrtion    
