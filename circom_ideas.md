@@ -32,7 +32,7 @@ parent(anne, bob).
 parent(bob, carol).
 ancestor(X, Y) :- parent(X, Y).
 ancestor(X, Y) :- parent(X, Z), ancestor(Z, Y).
-
+```
 ```
 goal_ancestor(unified_preds: int[10], unified_args: int[10][10], goal_args: int[10]) {
     // first disjunctrtion    
