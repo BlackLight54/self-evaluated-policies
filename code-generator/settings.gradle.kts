@@ -11,4 +11,4 @@ plugins {
 }
 
 rootProject.name = "code-generator"
-include("app", "list", "utilities")
+include("app")

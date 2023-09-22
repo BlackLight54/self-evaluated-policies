@@ -3,14 +3,10 @@
  */
 package hu.bme.app
 
-import hu.bme.utilities.StringUtils
-
-import org.apache.commons.text.WordUtils
-
 fun main() {
 
     val prologCode = """
-
+socialCreds(Creds):- Creds = [('ChangedWorkcapacityCredential','nominal',10000)].
 applySocialSupports(Input,[(_,SupportType,SupportValue)|CredsTail],Result):-
     applySupport(Input, SupportType, SupportValue, Output),
     applySocialSupports(Output,CredsTail,Result).
