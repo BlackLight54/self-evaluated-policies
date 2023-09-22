@@ -1,5 +1,31 @@
 pragma circom 2.0.0;
 
+
+template CheckNode(){
+   signal input unified_body[3][3];
+   signal input goal_args[3];
+   signal output c;
+   var parent = 4;
+   var ancestor = 5;
+   var none = 0;
+   var result = 0;
+   component goal_ancestor = GoalAncestor();
+   component knowledge = KnowledgeChecker();
+   if(goal_args[0] == parent){
+      knowledge.a <-- goal_args;
+      result = knowledge.c;
+   } else if(goal_args[0] == ancestor){
+      goal_ancestor.unified_body[0] <-- unified_body[0];
+      goal_ancestor.unified_body[1] <-- unified_body[1];
+      goal_ancestor.unified_body[2] <-- unified_body[2];
+      goal_ancestor.goal_args <-- goal_args;
+      result = goal_ancestor.c;
+   }
+
+   c <-- result;
+   c === 1;
+}
+
 template GoalAncestor() {
    signal input unified_body[3][3];
    signal input goal_args[3];
@@ -53,5 +79,5 @@ template KnowledgeChecker() {
    c === 1;
  }
 
- component main = GoalAncestor();
+ component main = CheckNode();
 
