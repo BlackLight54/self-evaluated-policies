@@ -1,8 +1,61 @@
 pragma circom 2.0.0;
 
 
+template PrologResolutionTreeArray(totalNodes,maxUnification) {
+   signal input goals[totalNodes][3]; 
+   signal input unifiedBodies[totalNodes][maxUnification][3];
+   signal output c;
+
+
+   
+   var result = 0;
+
+   var node[3] = goals[0];
+   var unifiedBody[maxUnification][3] = unifiedBodies[0];
+   component checkNode1 = CheckNode();
+   checkNode1.unified_body <-- unifiedBody;
+   checkNode1.goal_args <-- node;
+   result = result + checkNode1.c;
+   node = goals[1];
+   unifiedBody = unifiedBodies[1];
+   component checkNode2 = CheckNode();
+   checkNode2.unified_body <-- unifiedBody;
+   checkNode2.goal_args <-- node;
+   result = result + checkNode2.c;
+   node = goals[2];
+   unifiedBody = unifiedBodies[2];
+   component checkNode3 = CheckNode();
+   checkNode3.unified_body <-- unifiedBody;
+   checkNode3.goal_args <-- node;
+   result = result + checkNode3.c;
+   node = goals[3];
+   unifiedBody = unifiedBodies[3];
+   component checkNode4 = CheckNode();
+   checkNode4.unified_body <-- unifiedBody;
+   checkNode4.goal_args <-- node;
+   result = result + checkNode4.c;
+   node = goals[4];
+   unifiedBody = unifiedBodies[4];
+   component checkNode5 = CheckNode();
+   checkNode5.unified_body <-- unifiedBody;
+   checkNode5.goal_args <-- node;
+   result = result + checkNode5.c;
+   node = goals[5];
+   unifiedBody = unifiedBodies[5];
+   component checkNode6 = CheckNode();
+   checkNode6.unified_body <-- unifiedBody;
+   checkNode6.goal_args <-- node;
+   result = result + checkNode6.c;
+
+   // verify that all nodes are true
+   c <-- result;
+   c === totalNodes;
+}
+
+
+
 template CheckNode(){
-   signal input unified_body[3][3];
+   signal input unified_body[2][3];
    signal input goal_args[3];
    signal output c;
    var parent = 4;
@@ -17,9 +70,11 @@ template CheckNode(){
    } else if(goal_args[0] == ancestor){
       goal_ancestor.unified_body[0] <-- unified_body[0];
       goal_ancestor.unified_body[1] <-- unified_body[1];
-      goal_ancestor.unified_body[2] <-- unified_body[2];
       goal_ancestor.goal_args <-- goal_args;
       result = goal_ancestor.c;
+   } else if(goal_args[0] == 6 && goal_args[1] == 0 && goal_args[2] == 0){
+      // "true" goal
+      result = 1;
    }
 
    c <-- result;
@@ -27,7 +82,7 @@ template CheckNode(){
 }
 
 template GoalAncestor() {
-   signal input unified_body[3][3];
+   signal input unified_body[2][3];
    signal input goal_args[3];
    signal output c;
    var result=0;
@@ -37,13 +92,13 @@ template GoalAncestor() {
 
    goal_args[0] === 5;
    component knowledge = KnowledgeChecker();
-   if (unified_body[0][0] == parent && unified_body[1][0] == none && unified_body[2][0] == none){
+   if (unified_body[0][0] == parent && unified_body[1][0] == none){
       knowledge.a <-- unified_body[0];
       result = knowledge.c;
-   } else if(unified_body[0][0] == 5 && unified_body[1][0] == 4 && unified_body[2][0] == 0){
+   } else if(unified_body[0][0] == ancestor && unified_body[1][0] == parent){
     if(goal_args[0] == unified_body[0][0] &&
         unified_body[0][1] == unified_body[1][2] &&
-        goal_args[1] == unified_body[1][2]
+        goal_args[1] == unified_body[1][1]
       ){
          result=1;
       }
@@ -79,5 +134,5 @@ template KnowledgeChecker() {
    c === 1;
  }
 
- component main = CheckNode();
+ component main = PrologResolutionTreeArray(6,2);
 
