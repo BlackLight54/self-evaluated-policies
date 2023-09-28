@@ -5,53 +5,112 @@ template PrologResolutionTreeArray(totalNodes,maxUnification) {
    signal input goals[totalNodes][3]; 
    signal input unifiedBodies[totalNodes][maxUnification][3];
    signal output c;
+   var parent = 4;
+   var ancestor = 5;
+   var true = 6;
 
-
-   
+   var unknown = 8;
    var result = 0;
 
    var node[3] = goals[0];
    var unifiedBody[maxUnification][3] = unifiedBodies[0];
+   // The first node cannot be true
+   assert(node[0] != true);
+
    component checkNode1 = CheckNode();
    checkNode1.unified_body <-- unifiedBody;
    checkNode1.goal_args <-- node;
-   result = result + checkNode1.c;
+   result += checkNode1.c;
+   component transitionLogic1 = TransitionLogic();
+   transitionLogic1.prevUnifiedBodies <-- unifiedBodies[0];
+   transitionLogic1.currentGoal <-- goals[1];
+
    node = goals[1];
+   unifiedBody = unifiedBodies[1];
+   
    unifiedBody = unifiedBodies[1];
    component checkNode2 = CheckNode();
    checkNode2.unified_body <-- unifiedBody;
    checkNode2.goal_args <-- node;
-   result = result + checkNode2.c;
+   result += checkNode2.c;
+   component transitionLogic2 = TransitionLogic();
+   transitionLogic2.prevUnifiedBodies <-- unifiedBodies[1];
+   transitionLogic2.currentGoal <-- goals[2];
+
+
    node = goals[2];
    unifiedBody = unifiedBodies[2];
    component checkNode3 = CheckNode();
    checkNode3.unified_body <-- unifiedBody;
    checkNode3.goal_args <-- node;
-   result = result + checkNode3.c;
+   result += checkNode3.c;
+   component transitionLogic3 = TransitionLogic();
+   transitionLogic3.prevUnifiedBodies <-- unifiedBodies[2];
+   transitionLogic3.currentGoal <-- goals[3];
+
+
    node = goals[3];
    unifiedBody = unifiedBodies[3];
    component checkNode4 = CheckNode();
    checkNode4.unified_body <-- unifiedBody;
    checkNode4.goal_args <-- node;
-   result = result + checkNode4.c;
+   result += checkNode4.c;
+   component transitionLogic4 = TransitionLogic();
+   transitionLogic4.prevUnifiedBodies <-- unifiedBodies[3];
+   transitionLogic4.currentGoal <-- goals[4];
+
+
    node = goals[4];
    unifiedBody = unifiedBodies[4];
    component checkNode5 = CheckNode();
    checkNode5.unified_body <-- unifiedBody;
    checkNode5.goal_args <-- node;
-   result = result + checkNode5.c;
+   result += checkNode5.c;
+   component transitionLogic5 = TransitionLogic();
+   transitionLogic5.prevUnifiedBodies <-- unifiedBodies[4];
+   transitionLogic5.currentGoal <-- goals[5];
+
    node = goals[5];
    unifiedBody = unifiedBodies[5];
    component checkNode6 = CheckNode();
    checkNode6.unified_body <-- unifiedBody;
    checkNode6.goal_args <-- node;
-   result = result + checkNode6.c;
+   result += checkNode6.c;
+
+
 
    // verify that all nodes are true
    c <-- result;
    c === totalNodes;
 }
 
+template TransitionLogic() {
+   signal input prevUnifiedBodies[2][3];
+   signal input currentGoal[3];
+   signal output transition_okay;
+
+   var ancestor = 5;
+   var parent = 4;
+   var true = 6;
+
+   var result = 0;
+
+   if(prevUnifiedBodies[0][0] == ancestor || prevUnifiedBodies[1][0] == ancestor) {
+       if(currentGoal[0] == ancestor && (prevUnifiedBodies[0][1] == currentGoal[1] || prevUnifiedBodies[0][1] >= 8 || prevUnifiedBodies[1][1] == currentGoal[1] || prevUnifiedBodies[1][1] >= 8)) {
+           result = 1;
+       }
+   }
+   if(prevUnifiedBodies[0][0] == parent || prevUnifiedBodies[1][0] == parent) {
+       if(currentGoal[0] == parent && (prevUnifiedBodies[0][1] == currentGoal[1] || prevUnifiedBodies[0][1] >= 8 || prevUnifiedBodies[1][1] == currentGoal[1] || prevUnifiedBodies[1][1] >= 8)) {
+           result = 1;
+       }
+   }
+   if((prevUnifiedBodies[0][0] == true && prevUnifiedBodies[0][1] == 0) || currentGoal[0] == true) {
+       result = 1;
+   }
+   transition_okay <-- result;
+   transition_okay === 1;
+}
 
 
 template CheckNode(){
