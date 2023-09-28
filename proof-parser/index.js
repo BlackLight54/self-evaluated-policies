@@ -63,29 +63,67 @@ function parseTrueNode(node) {
 function parseTreeBFS(tree) {
     let goalArr = [];
     let queue = [];
+    let levelQueue = [];  // To keep track of node levels
+    let currentLevel = 0;
+    let maxDepth = findMaxDepth(tree);
+
     queue.push(tree);
+    levelQueue.push(currentLevel);
+
     while (queue.length > 0) {
         let node = queue.shift();
-        if (node == undefined)            {
+        currentLevel = levelQueue.shift();
+
+        if (node === undefined || node === null) {
             goalArr.push([0, 0, 0]);
+
+            // Only push child placeholders if current level isn't the last one
+            if (currentLevel < maxDepth - 1) {
+                for (let i = 0; i < maxParameterCount; i++) {
+                    queue.push(undefined);
+                    levelQueue.push(currentLevel + 1);
+                }
+            }
             continue;
         }
+
         if (node.unification) {
             goalArr.push(parseCompositeNode(node));
         }
-        if (node == 'true') {
+
+        if (node === 'true') {
             goalArr.push(parseTrueNode(node));
         }
+
+        // Check if node has ztree property and push children
         if (node.ztree) {
             for (let i = 0; i < maxParameterCount; i++) {
-                let item = node.ztree[i];
-                queue.push(item);
+                queue.push(node.ztree[i]);
+                levelQueue.push(currentLevel + 1);
+            }
+        } else {
+            // If node doesn't have ztree, still push placeholders for child nodes up to max depth
+            if (currentLevel < maxDepth - 1) {
+                for (let i = 0; i < maxParameterCount; i++) {
+                    queue.push(undefined);
+                    levelQueue.push(currentLevel + 1);
+                }
             }
         }
-        
     }
     return goalArr;
 }
+
+function findMaxDepth(node) {
+    if (node === undefined || node === null) {
+        return 0;
+    }
+    let leftDepth = node.ztree && node.ztree[0] ? findMaxDepth(node.ztree[0]) : 0;
+    let rightDepth = node.ztree && node.ztree[1] ? findMaxDepth(node.ztree[1]) : 0;
+
+    return 1 + Math.max(leftDepth, rightDepth);
+}
+
 
 
 
@@ -100,6 +138,7 @@ fs.readFile('tree.json', 'utf8', (err, jsonString) => {
         const jsonObject = JSON.parse(jsonString);
         let goalArr = parseTreeBFS(jsonObject);
         console.log(goalArr);
+        // console.log('Length:', goalArr.length);
     } catch (err) {
         console.log('Error parsing JSON:', err);
     }
