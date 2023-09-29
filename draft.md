@@ -1,5 +1,12 @@
 # Self-evaluating policies using zero knowledge proofs
-
+## Abstract
+Tételmodat: kontextusteremtés
+absztrakt Problémafelvetés
+Megoldás
+Milyen megoldást javaslunk
+Ez miért jó? Generikus. Miért prolog?Miért nem datalog? Miért ZKP? Miért R1CS és Circom?
+"Bár léteznek datalog alapú rendszerek, ezeak azonban korlátozottal a következő módon, ezzel szeben a mi munkánk...
+konkrét use-case-en prototípuson keresztül bemutatjuk a megoldásunkat
 ## Background
 
 ### Prolog
@@ -34,11 +41,46 @@ exisiting: walt.id and OPA
 
 ## Constructing a proof tree of a prolog evaluation with a public program and private input
 
-Meta-interpreter
+### Desiogn of the Meta-interpreter
 
 limitations, sub language defintion: no cut, no negation
 
+### Implementaion
+
+
+
 ## Efficient representation of prolog proof trees
+
+### Theoretical idea
+
+### Implementation
 
 ## Algorithm for verifying a prolog proof tree
 
+## Zero-knowledge framework for proving the correctness of a prolog proof tree
+
+Future work: recursive proofs
+
+IDEA: construct a circuit that is able to prove inputs of a specific prolog program, and then use it to prove the correctness of the proof tree. This circuit is designed in suh a way that it can be generated from the prolog program itself.
+
+### Architecture
+
+### How can we design circuits that can prove the correctness of a prolog proof tree?
+
+Alice ancestor example
+
+### How can we generate such circuits from prolog programs?
+
+#### Design of the generator program
+
+## Results
+
+Konrét use-case-t teszteljük: Alice ancestor example
+
+### 
+
+### Performance evaluation
+
+
+
+## Discussion
