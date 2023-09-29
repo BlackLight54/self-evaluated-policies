@@ -1,0 +1,47 @@
+{
+    "goal": "ancestor(anne,carol)",
+    "unification": {
+        "body": [
+            "parent(anne,_9136)",
+            "ancestor(_9136,carol)"
+        ],
+        "goal": "ancestor(anne,carol)"
+    },
+    "ztree": [
+        {
+            "goal": "parent(anne,bob)",
+            "unification": {
+                "body": [
+                    "true"
+                ],
+                "goal": "parent(anne,bob)"
+            },
+            "ztree": [
+                "true"
+            ]
+        },
+        {
+            "goal": "ancestor(bob,carol)",
+            "unification": {
+                "body": [
+                    "parent(bob,carol)"
+                ],
+                "goal": "ancestor(bob,carol)"
+            },
+            "ztree": [
+                {
+                    "goal": "parent(bob,carol)",
+                    "unification": {
+                        "body": [
+                            "true"
+                        ],
+                        "goal": "parent(bob,carol)"
+                    },
+                    "ztree": [
+                        "true"
+                    ]
+                }
+            ]
+        }
+    ]
+}
