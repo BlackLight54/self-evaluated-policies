@@ -12,21 +12,42 @@ const prologEncoding = {
 
 const maxParameterCount = 2;
 
+const maxUnificationCount = 2;
+
+function parseClause(clause) {
+    let predicate = String(clause).split('(')[0];
+    let parameters = [];
+    if (String(clause).split('(')[1] != undefined) {
+        parameters = String(clause).split('(')[1].split(')')[0].split(',');
+    }
+    return { predicate: predicate, parameters: parameters };
+}
+
 function parseCompositeNode(node) {
     if (node.unification) {
-        // console.log('Unification Goal:', node.unification.goal);
-        // console.log('Unification Body:', node.unification.body.join(', '));
-        // console.log('Goal:', node.goal);        
-        let goalPredicate = String(node.goal).split('(')[0];
-        let parameters = String(node.goal).split('(')[1].split(')')[0].split(',');
-        // console.log('Goal Predicate:', goalPredicate);
-        // console.log('Encoded Goal:', prologEncoding[goalPredicate]);
-        // console.log('Parameters:', parameters);
-        let thisGoalArr = [prologEncoding[goalPredicate]];
-        for (let parameter of parameters) {
-            thisGoalArr.push(prologEncoding[parameter]);
+        let goalClause = parseClause(node.unification.goal);
+        let goalArr = [prologEncoding[goalClause.predicate]];
+        
+        for (let parameter of goalClause.parameters) {
+            goalArr.push(prologEncoding[parameter]);
         }
-        return thisGoalArr;
+
+        let unificationArr = [];
+        if (node.ztree[0] === 'true') {
+            unificationArr.push([prologEncoding['true'], 0, 0]);
+        } else {
+            for(let unifiedGoal of node.ztree){
+                let unifiedGoalClause = parseClause(unifiedGoal.unification.goal);
+                let unifiedGoalArr = [prologEncoding[unifiedGoalClause.predicate]];
+                for (let parameter of unifiedGoalClause.parameters) {
+                    unifiedGoalArr.push(prologEncoding[parameter]);
+                }
+                unificationArr.push(unifiedGoalArr);
+            }
+        }
+
+
+        return { goalArr: goalArr, unificationArr: unificationArr };
     }
 }
 
@@ -36,32 +57,10 @@ function parseTrueNode(node) {
 
     }
 }
-// function parseNode(node) {
-//     // console.log('Goal:', node.goal);
-//     let thisGoalArr = [];
-//     if (node.unification) {
-//         thisGoalArr = parseCompositeNode(node);
-//     }
-
-//     if (node.ztree) {
-//         // console.log('ZTree:');
-//         for (let item of node.ztree) {
-//             if (typeof item === 'string') {
-//                 // console.log('   ', [prologEncoding[item],0,0]);
-//                 goalArr.push([prologEncoding[item], 0, 0]);
-//                 // goalArr = goalArr.push([prologEncoding[item],0,0]);
-//             } else {
-//                 goalArr = goalArr.concat(parseNode(item));
-//             }
-//         }
-//     }
-
-//     return goalArr;
-
-// }
 
 function parseTreeBFS(tree) {
     let goalArr = [];
+    let unificationArr = [];
     let queue = [];
     let levelQueue = [];  // To keep track of node levels
     let currentLevel = 0;
@@ -79,7 +78,7 @@ function parseTreeBFS(tree) {
 
             // Only push child placeholders if current level isn't the last one
             if (currentLevel < maxDepth - 1) {
-                for (let i = 0; i < maxParameterCount; i++) {
+                for (let i = 0; i < maxUnificationCount; i++) {
                     queue.push(undefined);
                     levelQueue.push(currentLevel + 1);
                 }
@@ -88,7 +87,9 @@ function parseTreeBFS(tree) {
         }
 
         if (node.unification) {
-            goalArr.push(parseCompositeNode(node));
+            let parsedNode = parseCompositeNode(node);
+            goalArr.push(parsedNode.goalArr);
+            unificationArr.push(parsedNode.unificationArr);
         }
 
         if (node === 'true') {
@@ -111,7 +112,7 @@ function parseTreeBFS(tree) {
             }
         }
     }
-    return goalArr;
+    return { goalArr, unificationArr };
 }
 
 function findMaxDepth(node) {
@@ -136,9 +137,11 @@ fs.readFile('tree.json', 'utf8', (err, jsonString) => {
 
     try {
         const jsonObject = JSON.parse(jsonString);
-        let goalArr = parseTreeBFS(jsonObject);
+        let { goalArr, unificationArr } = parseTreeBFS(jsonObject);
         console.log(goalArr);
-        // console.log('Length:', goalArr.length);
+        console.log('Length:', goalArr.length);
+        console.log(unificationArr);
+        console.log('Length:', unificationArr.length);
     } catch (err) {
         console.log('Error parsing JSON:', err);
     }
