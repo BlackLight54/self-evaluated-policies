@@ -6,55 +6,10 @@ package hu.bme.app
 fun main() {
 
     val prologCode = """
-socialCreds(Creds):- Creds = [('ChangedWorkcapacityCredential','nominal',10000)].
-applySocialSupports(Input,[(_,SupportType,SupportValue)|CredsTail],Result):-
-    applySupport(Input, SupportType, SupportValue, Output),
-    applySocialSupports(Output,CredsTail,Result).
-applySocialSupports(Input,[], Input).
-
-endPrice(Price):-
-    monthlyConsumptions(MonthlyConsumptions),
-    sumOfMonthlyConsumptions(MonthlyConsumptions,Sum),
-    rollingConsumption(Sum,RollingConsumption),
-    currentConsumption(Consumption),
-    consumptionClass(RollingConsumption,ConsumptionClass),
-    savingsClass(RollingConsumption,Consumption,SavingsClass),
-    priceBase(PriceBase),
-    applySavingsSupport(PriceBase, SavingsClass, ConsumptionClass, PriceAfterSavings),
-    socialCreds(Creds),
-    applySocialSupports(PriceAfterSavings,Creds,Price).
-
-inputPriceOk:-
-    endPrice(Price),
-    inputPrice(Price).
-
-writeSteps:-
-    monthlyConsumptions(MonthlyConsumptions),
-    sumOfMonthlyConsumptions(MonthlyConsumptions,Sum),
-    rollingConsumption(Sum,RollingConsumption),
-    currentConsumption(Consumption),
-    consumptionClass(RollingConsumption,ConsumptionClass),
-    savingsClass(RollingConsumption,Consumption,SavingsClass),
-    priceBase(PriceBase),
-    applySavingsSupport(PriceBase, SavingsClass, ConsumptionClass, PriceAfterSavings),
-    socialCreds(Creds),
-    applySocialSupports(PriceAfterSavings,Creds,Price),
-    write('Monthly consumptions: '), write(MonthlyConsumptions),nl,
-    write('Sum of monthly consumptions: '), write(Sum),nl,
-    write('Rolling consumption: '), write(RollingConsumption),nl,
-    write('Current consumption: '), write(Consumption),nl,
-    write('Consumption class: '), write(ConsumptionClass),nl,
-    write('Savings class: '), write(SavingsClass),nl,
-    write('Price base: '), write(PriceBase),nl,
-    write('Price after savings: '), write(PriceAfterSavings),nl,
-    write('Social creds: '), write(Creds),nl,
-    write('Price: '), write(Price),nl.
-
-start:- 
-    endPrice(_),
-    inputPriceOk,
-    write('Input price and calcualted price match!'),nl,
-    halt(0).
+parent(anne, bob).
+parent(bob, carol).
+ancestor(X, Y) :- parent(X, Y).
+ancestor(X, Y) :- parent(X, Z), ancestor(Z, Y).
     """.trimIndent()
 
     val clauses = Parser.parseProlog(prologCode)

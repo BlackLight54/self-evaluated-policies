@@ -2,3 +2,7 @@ ancestor_js
 *.wtns
 *.r1cs
 *.sym
+*.zkey
+powersOfTau28_hez_final_16.ptau
+proof.json
+public.json

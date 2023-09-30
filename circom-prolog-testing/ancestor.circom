@@ -1,89 +1,64 @@
 pragma circom 2.0.0;
 
+template TreeNode(branchFactor) {
+    // Each node's data
+    signal input goal[3];
+    signal input unified_body[branchFactor][3];
 
-template PrologResolutionTreeArray(totalNodes,maxUnification) {
-   signal input goals[totalNodes][3]; 
-   signal input unifiedBodies[totalNodes][maxUnification][3];
+    // If it's not a leaf, we connect the children
+    signal input children_goals[branchFactor][3];
    signal output c;
-   var parent = 4;
-   var ancestor = 5;
-   var true = 6;
-
-   var unknown = 8;
+    
+   component transitiontochild[branchFactor];
    var result = 0;
-
-   var node[3] = goals[0];
-   var unifiedBody[maxUnification][3] = unifiedBodies[0];
-   // The first node cannot be true
-   assert(node[0] != true);
-
-   component checkNode1 = CheckNode();
-   checkNode1.unified_body <-- unifiedBody;
-   checkNode1.goal_args <-- node;
-   result += checkNode1.c;
-   component transitionLogic1 = TransitionLogic();
-   transitionLogic1.prevUnifiedBodies <-- unifiedBodies[0];
-   transitionLogic1.currentGoal <-- goals[1];
-
-   node = goals[1];
-   unifiedBody = unifiedBodies[1];
-   
-   unifiedBody = unifiedBodies[1];
-   component checkNode2 = CheckNode();
-   checkNode2.unified_body <-- unifiedBody;
-   checkNode2.goal_args <-- node;
-   result += checkNode2.c;
-   component transitionLogic2 = TransitionLogic();
-   transitionLogic2.prevUnifiedBodies <-- unifiedBodies[1];
-   transitionLogic2.currentGoal <-- goals[2];
-
-
-   node = goals[2];
-   unifiedBody = unifiedBodies[2];
-   component checkNode3 = CheckNode();
-   checkNode3.unified_body <-- unifiedBody;
-   checkNode3.goal_args <-- node;
-   result += checkNode3.c;
-   component transitionLogic3 = TransitionLogic();
-   transitionLogic3.prevUnifiedBodies <-- unifiedBodies[2];
-   transitionLogic3.currentGoal <-- goals[3];
-
-
-   node = goals[3];
-   unifiedBody = unifiedBodies[3];
-   component checkNode4 = CheckNode();
-   checkNode4.unified_body <-- unifiedBody;
-   checkNode4.goal_args <-- node;
-   result += checkNode4.c;
-   component transitionLogic4 = TransitionLogic();
-   transitionLogic4.prevUnifiedBodies <-- unifiedBodies[3];
-   transitionLogic4.currentGoal <-- goals[4];
-
-
-   node = goals[4];
-   unifiedBody = unifiedBodies[4];
-   component checkNode5 = CheckNode();
-   checkNode5.unified_body <-- unifiedBody;
-   checkNode5.goal_args <-- node;
-   result += checkNode5.c;
-   component transitionLogic5 = TransitionLogic();
-   transitionLogic5.prevUnifiedBodies <-- unifiedBodies[4];
-   transitionLogic5.currentGoal <-- goals[5];
-
-   node = goals[5];
-   unifiedBody = unifiedBodies[5];
-   component checkNode6 = CheckNode();
-   checkNode6.unified_body <-- unifiedBody;
-   checkNode6.goal_args <-- node;
-   result += checkNode6.c;
-
-
-
-   // verify that all nodes are true
+   for(var i =0; i < branchFactor; i++) {
+      transitiontochild[i] = TransitionLogic();
+      transitiontochild[i].prevUnifiedBodies <-- unified_body;
+      transitiontochild[i].currentGoal <-- children_goals[i];
+      result += transitiontochild[i].transition_okay;
+   }
+	//if(goal[0] == 0 && (children_goals[0][0] != 0 || children_goals[1][0] != 0)) {
+	if(goal[0] == 0) {
+		for(var i = 0; i < branchFactor; i++) {
+			if(children_goals[i][0] != 0){
+				result = 0;
+			}
+		}
+	}
    c <-- result;
-   c === totalNodes;
+   c === branchFactor;
 }
 
+template PrologResolutionTree(depth, branchFactor) {
+    // Calculate total nodes using geometric series sum formula
+    var totalNodes = (branchFactor**(depth) - 1) / (branchFactor - 1);
+    assert(totalNodes == 15);
+
+    // Define the tree structure
+    signal input goals[totalNodes][3];
+    signal input unifiedBodies[totalNodes][branchFactor][3]; 
+    signal output c;
+    component nodes[totalNodes];
+    for(var i = 0; i < totalNodes; i++) {
+        nodes[i] = TreeNode(branchFactor);
+    }
+    
+    
+
+    for(var i = 0; i < totalNodes; i++){
+         nodes[i].goal <-- goals[i];
+         nodes[i].unified_body <-- unifiedBodies[i];
+
+        for(var j = 0; j < branchFactor; j++) {
+         var childGoalIndex = i * branchFactor + j;
+      	if(childGoalIndex < totalNodes) {
+         	nodes[i].children_goals[j] <-- goals[childGoalIndex];
+         } else {
+            nodes[i].children_goals[j] <-- [0,0,0];
+         }
+        }
+    }
+}
 template TransitionLogic() {
    signal input prevUnifiedBodies[2][3];
    signal input currentGoal[3];
@@ -108,6 +83,9 @@ template TransitionLogic() {
    if((prevUnifiedBodies[0][0] == true && prevUnifiedBodies[0][1] == 0) || currentGoal[0] == true) {
        result = 1;
    }
+	if(currentGoal[0] == 0) {
+		result = 1;
+	}
    transition_okay <-- result;
    transition_okay === 1;
 }
@@ -193,5 +171,5 @@ template KnowledgeChecker() {
    c === 1;
  }
 
- component main = PrologResolutionTreeArray(6,2);
+ component main = PrologResolutionTree(4,2);
 

@@ -75,6 +75,7 @@ function parseTreeBFS(tree) {
 
         if (node === undefined || node === null) {
             goalArr.push([0, 0, 0]);
+            unificationArr.push([[0, 0, 0]]);
 
             // Only push child placeholders if current level isn't the last one
             if (currentLevel < maxDepth - 1) {
@@ -94,6 +95,7 @@ function parseTreeBFS(tree) {
 
         if (node === 'true') {
             goalArr.push(parseTrueNode(node));
+            unificationArr.push([[0, 0, 0]]);
         }
 
         // Check if node has ztree property and push children
