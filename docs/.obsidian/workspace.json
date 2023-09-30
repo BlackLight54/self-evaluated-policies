@@ -11,8 +11,10 @@
             "id": "2b573c45401a003d",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {}
+              "type": "mindmapView",
+              "state": {
+                "file": "Untitled mindmap.md"
+              }
             }
           }
         ]
@@ -81,6 +83,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "Untitled mindmap.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -97,6 +100,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
+                "file": "Untitled mindmap.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -118,7 +122,9 @@
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {}
+              "state": {
+                "file": "Untitled mindmap.md"
+              }
             }
           }
         ]
@@ -140,9 +146,10 @@
   },
   "active": "2b573c45401a003d",
   "lastOpenFiles": [
-    "Untitled.canvas",
-    "Untitled mindmap.md",
     "draft.md",
+    "outline.md",
+    "Untitled mindmap.md",
+    "Untitled.canvas",
     "circom_ideas.md"
   ]
 }
