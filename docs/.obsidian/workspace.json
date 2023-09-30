@@ -1,22 +1,18 @@
 {
   "main": {
-    "id": "95c81dc74869e729",
+    "id": "f2281e7e16e82a28",
     "type": "split",
     "children": [
       {
-        "id": "7700d6d6d466b03c",
+        "id": "8fc4b738b6e012dd",
         "type": "tabs",
         "children": [
           {
-            "id": "0932637776aee50c",
+            "id": "2b573c45401a003d",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "docs/notes/README.md",
-                "mode": "source",
-                "source": false
-              }
+              "type": "empty",
+              "state": {}
             }
           }
         ]
@@ -25,15 +21,15 @@
     "direction": "vertical"
   },
   "left": {
-    "id": "c9a67a97f659ad81",
+    "id": "2774cb43d866ee32",
     "type": "split",
     "children": [
       {
-        "id": "26fda8485af0cb68",
+        "id": "0de569800c0c17cd",
         "type": "tabs",
         "children": [
           {
-            "id": "152d3e2e362dbcfa",
+            "id": "29413f61c6c94ee6",
             "type": "leaf",
             "state": {
               "type": "file-explorer",
@@ -43,7 +39,7 @@
             }
           },
           {
-            "id": "d335d7da4f6485c8",
+            "id": "2e80992f3bbede54",
             "type": "leaf",
             "state": {
               "type": "search",
@@ -58,7 +54,7 @@
             }
           },
           {
-            "id": "b4647d3305c0fee7",
+            "id": "2de0b6f5d7b276fc",
             "type": "leaf",
             "state": {
               "type": "bookmarks",
@@ -69,23 +65,22 @@
       }
     ],
     "direction": "horizontal",
-    "width": 200
+    "width": 300
   },
   "right": {
-    "id": "c1a1d3f7fe233fc4",
+    "id": "576018facbec7e8c",
     "type": "split",
     "children": [
       {
-        "id": "28de6687aeed5973",
+        "id": "f3b1bd95c882812a",
         "type": "tabs",
         "children": [
           {
-            "id": "b68817a1634fbb52",
+            "id": "27ba4337f0f27b02",
             "type": "leaf",
             "state": {
               "type": "backlink",
               "state": {
-                "file": "docs/notes/README.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -97,19 +92,18 @@
             }
           },
           {
-            "id": "a8a002f1bbff3d7f",
+            "id": "dc1c0d001be8f79a",
             "type": "leaf",
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "docs/notes/README.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
             }
           },
           {
-            "id": "96e28203f8057457",
+            "id": "e8842b1c420929a5",
             "type": "leaf",
             "state": {
               "type": "tag",
@@ -120,13 +114,11 @@
             }
           },
           {
-            "id": "6b9fb95e05ed96cf",
+            "id": "029031928a6c2ef0",
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {
-                "file": "docs/notes/README.md"
-              }
+              "state": {}
             }
           }
         ]
@@ -146,11 +138,11 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "0932637776aee50c",
+  "active": "2b573c45401a003d",
   "lastOpenFiles": [
-    "docs/notes/Questions.md",
-    "docs/notes/Outline.md",
-    "docs/notes/3. session.md",
-    "docs/notes/README.md"
+    "Untitled.canvas",
+    "Untitled mindmap.md",
+    "draft.md",
+    "circom_ideas.md"
   ]
 }
