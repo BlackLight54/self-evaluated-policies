@@ -6,7 +6,6 @@
       {
         "id": "63947033cee8d92f",
         "type": "tabs",
-        "dimension": 53.196622436670694,
         "children": [
           {
             "id": "48caa3a26f0315f7",
@@ -17,23 +16,6 @@
                 "file": "abstract_eng.md",
                 "mode": "source",
                 "source": false
-              }
-            }
-          }
-        ]
-      },
-      {
-        "id": "ee62c2b5e504efc0",
-        "type": "tabs",
-        "dimension": 46.80337756332931,
-        "children": [
-          {
-            "id": "70ee002c7653ad4e",
-            "type": "leaf",
-            "state": {
-              "type": "mindmapView",
-              "state": {
-                "file": "outline.md"
               }
             }
           }
