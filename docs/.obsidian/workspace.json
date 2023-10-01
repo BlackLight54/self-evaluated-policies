@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "abstract_eng.md",
+                "file": "abstract_hun.md",
                 "mode": "source",
                 "source": false
               }
@@ -85,7 +85,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "abstract_eng.md",
+                "file": "abstract_hun.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -102,7 +102,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "abstract_eng.md",
+                "file": "abstract_hun.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -125,7 +125,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "abstract_eng.md"
+                "file": "abstract_hun.md"
               }
             }
           }
@@ -149,8 +149,9 @@
   },
   "active": "48caa3a26f0315f7",
   "lastOpenFiles": [
-    "outline.md",
     "abstract_eng.md",
+    "abstract_hun.md",
+    "outline.md",
     "circom_ideas.md",
     "angelEfficientRepresentationNumerical2022.md",
     "Untitled mindmap.md",
