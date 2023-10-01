@@ -147,7 +147,8 @@
               }
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "horizontal",
@@ -166,9 +167,9 @@
   },
   "active": "48caa3a26f0315f7",
   "lastOpenFiles": [
-    "circom_ideas.md",
     "outline.md",
     "abstract_eng.md",
+    "circom_ideas.md",
     "angelEfficientRepresentationNumerical2022.md",
     "Untitled mindmap.md",
     "notes/Outline.md",
