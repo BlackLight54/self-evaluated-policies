@@ -14,8 +14,6 @@ Our approach highlights the possibilities of integrating Prolog with ZKPs and of
 %% Önkiértékelésű eljárásrendek Tudásmentes Bizonyítás-támogatása%%
 
 
-%% vágni %%
-%% style check, less boastful %%
 %% szekció 1. információs rendszerek, 2. intelligens rendszerek %%
 %% tudásmentes bizonyítások, prolog, Önrendelkezésű identitás, declarative policies %%
 
