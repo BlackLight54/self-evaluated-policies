@@ -14,6 +14,12 @@ ancestor(X, Y) :- parent(X, Z), ancestor(Z, Y).
 
     val clauses = Parser.parseProlog(prologCode)
     clauses.forEach { println(it) }
+    val mapping = createMapping(clauses)
 
+    mapping.forEach { (name, index) ->
+        println("$name: $index")
+    }
 
+    clauses.filter { it.body.isEmpty() }.forEach { clause ->
+        println(clause.head.encode(mapping)) }
 }
