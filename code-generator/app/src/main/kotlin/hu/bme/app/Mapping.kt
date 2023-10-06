@@ -51,6 +51,13 @@ fun createMapping(clauses: List<Clause>) :Map<String,Int>{
                 mapping[term.name] = counter++
             }
         }
+        clause.body.forEach { predicate ->
+            predicate.terms.forEach { term ->
+                if (!mapping.contains(term.name) && term is Variable) {
+                    mapping[term.name] = counter++
+                }
+            }
+        }
     }
     return mapping
 }
