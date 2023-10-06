@@ -10,13 +10,13 @@ template TreeNode(branchFactor) {
    signal output c;
     
    component transitiontochild[branchFactor];
-   var result = 0;
+   var result = 1;
    for(var i =0; i < branchFactor; i++) {
       log("Visiting child:", i, "of", branchFactor, "with goal", children_goals[i][0], children_goals[i][1], children_goals[i][2], "from parent", goal[0], goal[1], goal[2]);
       transitiontochild[i] = TransitionLogic();
       transitiontochild[i].prevUnifiedBodies <-- unified_body;
       transitiontochild[i].currentGoal <-- children_goals[i];
-      result += transitiontochild[i].transition_okay;
+      result = result && transitiontochild[i].transition_okay;
    }
 	//if(goal[0] == 0 && (children_goals[0][0] != 0 || children_goals[1][0] != 0)) {
 	if(goal[0] == 0) {
@@ -30,12 +30,10 @@ template TreeNode(branchFactor) {
    component checknode = CheckNode();
    checknode.goal_args <-- goal;
    checknode.unified_body <-- unified_body;
-   if(checknode.c == 1) {
-      result += 1;
-   }
+   result = result && checknode.c;
 
    c <-- result;
-   c === branchFactor+1;
+   c === 1;
 }
 
 template PrologResolutionTree(depth, branchFactor) {
