@@ -1,17 +1,18 @@
 pragma circom 2.0.0;
 
 template TreeNode(branchFactor) {
-    // Each node's data
-    signal input goal[3];
-    signal input unified_body[branchFactor][3];
+   // Each node's data
+   signal input goal[3];
+   signal input unified_body[branchFactor][3];
 
     // If it's not a leaf, we connect the children
-    signal input children_goals[branchFactor][3];
+   signal input children_goals[branchFactor][3];
    signal output c;
     
    component transitiontochild[branchFactor];
    var result = 0;
    for(var i =0; i < branchFactor; i++) {
+      log("Visiting child:", i, "of", branchFactor, "with goal", children_goals[i][0], children_goals[i][1], children_goals[i][2], "from parent", goal[0], goal[1], goal[2]);
       transitiontochild[i] = TransitionLogic();
       transitiontochild[i].prevUnifiedBodies <-- unified_body;
       transitiontochild[i].currentGoal <-- children_goals[i];
@@ -25,8 +26,16 @@ template TreeNode(branchFactor) {
 			}
 		}
 	}
+
+   component checknode = CheckNode();
+   checknode.goal_args <-- goal;
+   checknode.unified_body <-- unified_body;
+   if(checknode.c == 1) {
+      result += 1;
+   }
+
    c <-- result;
-   c === branchFactor;
+   c === branchFactor+1;
 }
 
 template PrologResolutionTree(depth, branchFactor) {
@@ -50,7 +59,7 @@ template PrologResolutionTree(depth, branchFactor) {
          nodes[i].unified_body <-- unifiedBodies[i];
 
         for(var j = 0; j < branchFactor; j++) {
-         var childGoalIndex = i * branchFactor + j;
+         var childGoalIndex = i * branchFactor + j+1;
       	if(childGoalIndex < totalNodes) {
          	nodes[i].children_goals[j] <-- goals[childGoalIndex];
          } else {
@@ -70,15 +79,27 @@ template TransitionLogic() {
 
    var result = 0;
 
-   if(prevUnifiedBodies[0][0] == ancestor || prevUnifiedBodies[1][0] == ancestor) {
-       if(currentGoal[0] == ancestor && (prevUnifiedBodies[0][1] == currentGoal[1] || prevUnifiedBodies[0][1] >= 8 || prevUnifiedBodies[1][1] == currentGoal[1] || prevUnifiedBodies[1][1] >= 8)) {
-           result = 1;
-       }
+   if(currentGoal[0] == ancestor && (prevUnifiedBodies[0][0] == ancestor || prevUnifiedBodies[1][0] == ancestor)) {
+      var has_match = 0;
+      for(var i = 0; i < 2; i++) {
+         if(prevUnifiedBodies[i][1] == currentGoal[1] && prevUnifiedBodies[i][2] == currentGoal[2]) {
+            has_match = 1;
+         }
+      }
+      if(has_match){
+         result = 1;
+      }
    }
-   if(prevUnifiedBodies[0][0] == parent || prevUnifiedBodies[1][0] == parent) {
-       if(currentGoal[0] == parent && (prevUnifiedBodies[0][1] == currentGoal[1] || prevUnifiedBodies[0][1] >= 8 || prevUnifiedBodies[1][1] == currentGoal[1] || prevUnifiedBodies[1][1] >= 8)) {
-           result = 1;
-       }
+   if(currentGoal[0] == parent && (prevUnifiedBodies[0][0] == parent || prevUnifiedBodies[1][0] == parent)) {
+      var has_match = 0;
+      for(var i = 0; i < 2; i++) {
+         if(prevUnifiedBodies[i][1] == currentGoal[1] && prevUnifiedBodies[i][2] == currentGoal[2]) {
+            has_match = 1;
+         }
+      }
+      if(has_match){
+         result = 1;
+      }
    }
    if((prevUnifiedBodies[0][0] == true && prevUnifiedBodies[0][1] == 0) || currentGoal[0] == true) {
        result = 1;
@@ -86,6 +107,11 @@ template TransitionLogic() {
 	if(currentGoal[0] == 0) {
 		result = 1;
 	}
+
+   if(result != 1){
+      log("Failed transition:", currentGoal[0], currentGoal[1], currentGoal[2]);
+   }
+
    transition_okay <-- result;
    transition_okay === 1;
 }
@@ -112,8 +138,10 @@ template CheckNode(){
    } else if(goal_args[0] == 6 && goal_args[1] == 0 && goal_args[2] == 0){
       // "true" goal
       result = 1;
+   } else if(goal_args[0] == 0 && goal_args[1] == 0 && goal_args[2] == 0){
+      // "none" goal
+      result = 1;
    }
-
    c <-- result;
    c === 1;
 }
@@ -128,6 +156,7 @@ template GoalAncestor() {
    var none = 0;
 
    goal_args[0] === 5;
+   log(unified_body[0][0], unified_body[0][1], unified_body[0][2], unified_body[1][0], unified_body[1][1], unified_body[1][2]);
    component knowledge = KnowledgeChecker();
    if (unified_body[0][0] == parent && unified_body[1][0] == none){
       knowledge.a <-- unified_body[0];
