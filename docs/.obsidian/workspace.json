@@ -6,7 +6,6 @@
       {
         "id": "63947033cee8d92f",
         "type": "tabs",
-        "dimension": 48.854041013269,
         "children": [
           {
             "id": "48caa3a26f0315f7",
@@ -14,39 +13,9 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "abstract_eng.md",
+                "file": "abstract_hun.md",
                 "mode": "source",
                 "source": false
-              }
-            }
-          },
-          {
-            "id": "4e5604010a287fb6",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "abstract_eng.md",
-                "mode": "source",
-                "source": false
-              }
-            }
-          }
-        ],
-        "currentTab": 1
-      },
-      {
-        "id": "ee62c2b5e504efc0",
-        "type": "tabs",
-        "dimension": 51.145958986731,
-        "children": [
-          {
-            "id": "70ee002c7653ad4e",
-            "type": "leaf",
-            "state": {
-              "type": "mindmapView",
-              "state": {
-                "file": "outline.md"
               }
             }
           }
@@ -116,7 +85,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "abstract_eng.md",
+                "file": "abstract_hun.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -133,7 +102,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "abstract_eng.md",
+                "file": "abstract_hun.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -156,11 +125,12 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "abstract_eng.md"
+                "file": "abstract_hun.md"
               }
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "horizontal",
@@ -177,11 +147,13 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "4e5604010a287fb6",
+  "active": "48caa3a26f0315f7",
   "lastOpenFiles": [
-    "outline.md",
     "abstract_eng.md",
+    "abstract_hun.md",
+    "outline.md",
     "circom_ideas.md",
+    "angelEfficientRepresentationNumerical2022.md",
     "Untitled mindmap.md",
     "notes/Outline.md",
     "Untitled.canvas",
