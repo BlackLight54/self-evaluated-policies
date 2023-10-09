@@ -71,4 +71,70 @@ class ParserTest {
             )
         ), clauses)
     }
+
+    // Test arithmetics
+    @Test fun testParseArithmetics() {
+        val prologCode = """
+            p(X) :- X is 1 + 2.
+            q(X) :- X is 1 - 2.
+            r(X) :- X is 1 * 2.
+            s(X) :- X is 1 / 2.
+            t(X) :- X is 1 // 2.
+            u(X) :- X is 1 mod 2.
+            v(X) :- X is 1 ** 2.
+            w(X,Y) :- X \= Y.
+        """.trimIndent()
+
+        val clauses = Parser.parseProlog(prologCode)
+        assertEquals(listOf(
+            Clause(
+                Predicate("p", listOf(Variable("X"))),
+                listOf(
+                    Predicate("is", listOf(Variable("X"), Predicate("+", listOf(Atom("1"), Atom("2")))))
+                )
+            ),
+            Clause(
+                Predicate("q", listOf(Variable("X"))),
+                listOf(
+                    Predicate("is", listOf(Variable("X"), Predicate("-", listOf(Atom("1"), Atom("2")))))
+                )
+            ),
+            Clause(
+                Predicate("r", listOf(Variable("X"))),
+                listOf(
+                    Predicate("is", listOf(Variable("X"), Predicate("*", listOf(Atom("1"), Atom("2")))))
+                )
+            ),
+            Clause(
+                Predicate("s", listOf(Variable("X"))),
+                listOf(
+                    Predicate("is", listOf(Variable("X"), Predicate("/", listOf(Atom("1"), Atom("2")))))
+                )
+            ),
+            Clause(
+                Predicate("t", listOf(Variable("X"))),
+                listOf(
+                    Predicate("is", listOf(Variable("X"), Predicate("//", listOf(Atom("1"), Atom("2")))))
+                )
+            ),
+            Clause(
+                Predicate("u", listOf(Variable("X"))),
+                listOf(
+                    Predicate("is", listOf(Variable("X"), Predicate("mod", listOf(Atom("1"), Atom("2")))))
+                )
+            ),
+            Clause(
+                Predicate("v", listOf(Variable("X"))),
+                listOf(
+                    Predicate("is", listOf(Variable("X"), Predicate("**", listOf(Atom("1"), Atom("2")))))
+                )
+            ),
+            Clause(
+                Predicate("w", listOf(Variable("X"), Variable("Y"))),
+                listOf(
+                    Predicate("\\=", listOf(Variable("X"), Variable("Y")))
+                )
+            )
+        ), clauses)
+    }
 }

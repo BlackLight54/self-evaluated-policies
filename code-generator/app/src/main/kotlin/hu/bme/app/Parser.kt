@@ -1,6 +1,7 @@
 package hu.bme.app
 
 object Parser {
+    val SPECIAL_TERMS = listOf(" is ", ">", "<", ">=", "=<",  "\\=", "==","+","-","*","/","\\")
     fun parseProlog(prologCode: String): List<Clause> {
         val clauses = mutableListOf<Clause>()
 
@@ -74,6 +75,11 @@ object Parser {
 
     fun parsePredicate(predStr: String): Predicate {
         val name = predStr.substringBefore("(").trim()
+        // Handle arithmetics
+        if (SPECIAL_TERMS.any { predStr.contains(it) }) {
+            val predicate = parseSpecialPredicate(name)
+            return if(predicate is Predicate) predicate as Predicate else error("$predStr is not a predicate")
+        }
         val termsStr = if (predStr.contains("(")) predStr.substringAfter("(").trimEnd(')', '.',',').trim() else ""
         val terms = if (termsStr.isNotEmpty()) {
             termsStr.split(",").map { parseTerm(it.trim()) }
@@ -84,7 +90,24 @@ object Parser {
         return Predicate(name, terms)
     }
 
+    // Parse arithmetics
+    fun parseSpecialPredicate(predStr: String): Term {
+        // Return if empty recursive call
+        if (predStr.isEmpty()) return Predicate("", emptyList())
+        // Find the special term name in the specialTerms list
+        val specialTerm = SPECIAL_TERMS.find { predStr.contains(it) } ?: predStr
+        return if(predStr != specialTerm) {
+            // Split the predicate string into the left and right side of the special term
+            val parts = predStr.split(specialTerm)
+            val left = parseTerm(parts[0].trim())
+            val rightPredicate = parseSpecialPredicate(parts[1].trim())
+            // Return the predicate
+            Predicate(specialTerm, listOf(left, rightPredicate))
+        } else {
+            parseTerm(predStr)
+        }
 
+    }
 
     fun parseTerm(termStr: String): Term {
         val trimmedTerm = termStr.trimEnd('.').trim()

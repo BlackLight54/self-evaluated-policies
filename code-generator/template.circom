@@ -67,7 +67,7 @@ template PrologResolutionTree(depth, branchFactor) {
     }
 }
 template TransitionLogic() {
-   signal input prevUnifiedBodies[2][3];
+   signal input prevUnifiedBodies[REPLACE_BRANCH_FACTOR][3];
    signal input currentGoal[3];
    signal output transition_okay;
 
@@ -92,7 +92,7 @@ REPLACE_TRANSITION_RULES
 
 
 template CheckNode(){
-   signal input unified_body[2][3];
+   signal input unified_body[REPLACE_BRANCH_FACTOR][3];
    signal input goal_args[3];
    signal output c;
 REPLACE_PREDICATE_MAPPINGS
