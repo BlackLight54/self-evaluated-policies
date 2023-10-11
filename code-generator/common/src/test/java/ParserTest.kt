@@ -1,5 +1,4 @@
-package hu.bme.app
-
+import hu.bme.app.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -22,7 +21,8 @@ class ParserTest {
 
     @Test fun testParseClause() {
         val clause = Parser.parseClause("p(a, X) :- q(X, Y), r(Y)")
-        assertEquals(Clause(
+        assertEquals(
+            Clause(
             Predicate("p", listOf(Atom("a"), Variable("X"))),
             listOf(
                 Predicate("q", listOf(Variable("X"), Variable("Y"))),

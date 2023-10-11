@@ -18,11 +18,11 @@ data class ResolutionTree(var goal: List<Int>, var unification: List<List<Int>>,
         return max
     }
 
-    fun standardize(): ResolutionTree {
+    fun standardize(branchingFactor_input: Int = 0,maxDepth_input: Int = 0, unificationCount_input: Int = 0): ResolutionTree {
         val elementCount = getMaxElementCount()
-        val unificationCount = getMaxUnficationCount()
-        val maxDepth = getMaxDepth()
-        val branchingFactor = getMaxChildrenCount()
+        val unificationCount = if(unificationCount_input != 0) unificationCount_input else getMaxUnficationCount()
+        val maxDepth = if(maxDepth_input != 0) maxDepth_input else  getMaxDepth()
+        val branchingFactor = if(branchingFactor_input != 0) branchingFactor_input else getMaxChildrenCount()
         return standardizeBranching(branchingFactor,maxDepth).standardizeElements(elementCount, unificationCount)
     }
 
@@ -50,7 +50,7 @@ data class ResolutionTree(var goal: List<Int>, var unification: List<List<Int>>,
         }
         val json = JSONObject()
         json.put("goals",goals)
-        json.put("unifications",unifications)
+        json.put("unifiedBodies",unifications)
         return json.toString()
     }
 
