@@ -12,3 +12,4 @@ plugins {
 
 rootProject.name = "code-generator"
 include("app")
+include("common")
