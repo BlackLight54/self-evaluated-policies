@@ -54,7 +54,7 @@ term
     | '-'? integer      # integer_term //TODO: negative case should be covered by unary_operator
     | '-'? FLOAT        # float
     // structure / compound term
-    | atom '(' termlist ')'     # compound_term
+    | head=atom '(' body=termlist ')'     # compound_term
     |<assoc=right> term operator_ term        # binary_operator
     | operator_ term             # unary_operator
     | '[' termlist ( '|' term )? ']' # list_term
@@ -62,6 +62,7 @@ term
 
     | atom              # atom_term
     ;
+
 
 //TODO: operator priority, associativity, arity. Filter valid priority ranges for e.g. [list] syntax
 //TODO: modifying operator table

@@ -11,106 +11,172 @@ import prologParser
 
 class Parser(val code: String) : prologBaseListener() {
 
+    val operators = listOf(
+        ":-",
+        "-->",
+        "?-",
+        "dynamic",
+        "multifile",
+        "discontiguous",
+        "public",
+        ";",
+        "->",
+        ",",
+        "\\+",
+        "=",
+        "\\=",
+        "==",
+        "\\==",
+        "@<",
+        "@=<",
+        "@>",
+        "@>=",
+        "=..",
+        "is",
+        "=:=",
+        "=\\=",
+        "<",
+        "=<",
+        ">",
+        ">=",
+        ":",
+        "+",
+        "-",
+        "/\\",
+        "\\/",
+        "*",
+        "/",
+        "//",
+        "rem",
+        "mod",
+        "<<",
+        ">>",
+        "**",
+        "^",
+        "\\"
+    )
+
     val result = mutableListOf<Clause>()
 
     fun parse() {
         val lexer = prologLexer(CharStreams.fromString(code))
         val tokens = CommonTokenStream(lexer)
         val parser = prologParser(tokens)
-        val tree: ParseTree = parser.p_text()
 
-        val walker = ParseTreeWalker()
-        walker.walk(this, tree)
+        ParseTreeWalker.DEFAULT.walk(this, parser.p_text())
     }
 
 
     override fun exitClause(ctx: prologParser.ClauseContext?) {
 
-        println("Clause:")
         if (ctx?.term()?.getChild(1)?.text == ":-") {
             val headTermNode = ctx.term().getChild(0)
             val bodyTermNode = ctx.term().getChild(2)
-            println("Head: ${headTermNode?.text}")
-            println("Body: ${bodyTermNode?.text}")
-            val headPredicate = parsePredicate(headTermNode!! as prologParser.TermContext)
+            val headPredicate = parseTerm(headTermNode!! as prologParser.TermContext)
             val bodyPredicates = parseBody(bodyTermNode!! as prologParser.TermContext)
-            println(Clause(headPredicate, bodyPredicates))
+            println(Clause(headPredicate as Predicate, bodyPredicates.map { it as Predicate }))
 
         } else {
-            println("Fact: ${ctx?.term()?.getChild(0)?.text}")
-            println(parsePredicate(ctx?.term()!!))
+            println(parseTerm(ctx?.term()!!))
         }
 
 
     }
 
-    fun parseBody(body: prologParser.TermContext): List<Predicate> {
-        val result = mutableListOf<Predicate>()
-        if (body.getChild(1).text == "(" && body.getChild(body.childCount - 1).text == ")") {
-            result.add(parsePredicate(body))
+    private fun parseBody(body: prologParser.TermContext): List<Term> {
+        val result = mutableListOf<Term>()
+        if (body.getChild(1)?.text == ",") {
+            result.add(parseTerm(body.getChild(0) as prologParser.TermContext))
+            result.addAll(parseBody(body.getChild(2) as prologParser.TermContext))
         } else {
-            for (i in 0 until body.childCount) {
-                if (body.getChild(i).text == ",") continue
-                result.add(parsePredicate(body.getChild(i) as prologParser.TermContext))
-            }
+            result.add(parseTerm(body))
         }
         return result
     }
 
-    fun parsePredicate(ctx: prologParser.TermContext): Predicate {
-        var name = ""
+    private fun parseUnaryOperator(ctx: prologParser.TermContext): Predicate {
         val terms = mutableListOf<Term>()
-        // parse atom(termlist) format predicates
-        if (ctx.childCount == 4 && ctx.getChild(1).text == "(" && ctx.getChild(3).text == ")") {
-            name = ctx.getChild(0).text!!
-            val termList = ctx.getChild(2)
-            terms.addAll(parseTermList(termList as prologParser.TermlistContext))
-        }
-        // parse binary operators
-        else if (ctx.childCount == 3 && ctx.getChild(1).text != ",") {
-            name = ctx.getChild(1).getChild(0).text!!
-            terms.add(parseTerm(ctx.getChild(0) as prologParser.TermContext))
-            terms.add(parseTerm(ctx.getChild(2) as prologParser.TermContext))
-        }
-        // parse unary operators
-        else if (ctx.childCount == 2) {
-            name = ctx.getChild(0).text!!
-            terms.add(parseTerm(ctx.getChild(1) as prologParser.TermContext))
-        }
-        // parse compund terms
-        else if (ctx.childCount > 2) {
-            name = ctx.getChild(0).text!!
-            terms.addAll(parseCompundTerm(ctx))
-        }
-
+        val name = ctx.getChild(0).text!!
+        terms.add(parseTerm(ctx.getChild(1) as prologParser.TermContext))
         return Predicate(name, terms)
     }
 
-    fun parseTermList(termListCtx: prologParser.TermlistContext): List<Term> {
+    private fun parseBinaryOperator(ctx: prologParser.TermContext): Predicate {
+        val terms = mutableListOf<Term>()
+        val name = ctx.getChild(1).getChild(0).text!!
+        terms.add(parseTerm(ctx.getChild(0) as prologParser.TermContext))
+        terms.add(parseTerm(ctx.getChild(2) as prologParser.TermContext))
+        return Predicate(name, terms)
+    }
+
+    private fun parseCompoundTerm(ctx: prologParser.TermContext): Predicate {
+        val terms = mutableListOf<Term>()
+        val name = ctx.getChild(0).getChild(0).text!!
+        val termList = ctx.getChild(2)
+        terms.addAll(parseTermList(termList as prologParser.TermlistContext))
+        return Predicate(name, terms)
+    }
+
+    private fun parseTermList(termListCtx: prologParser.TermlistContext): List<Term> {
+
+        val childTerm = termListCtx.getChild(0)
+        return parseTermListInner(childTerm)
+    }
+
+    private fun parseTermListInner(
+        childTerm: ParseTree
+    ): MutableList<Term> {
         val result = mutableListOf<Term>()
-        val child = termListCtx.getChild(0)
-        if (child.childCount == 1) {
-            result.add(parseTerm(child as prologParser.TermContext))
+        if (childTerm.getChild(1)?.text == ",") {
+            result.add(parseTerm(childTerm.getChild(0) as prologParser.TermContext))
+            result.addAll(parseTermListInner(childTerm.getChild(2)))
         } else {
-           result.addAll(parseCompundTerm(child as prologParser.TermContext))
-        }
-        println("TermList:$result")
-        return result
-    }
-
-    fun parseCompundTerm(compoundTerm: prologParser.TermContext): List<Term> {
-        val result = mutableListOf<Term>()
-        for (j in 0 until compoundTerm.childCount) {
-            if (compoundTerm.getChild(j).text == ",") continue
-            result.add(parseTerm(compoundTerm.getChild(j) as prologParser.TermContext))
+            result.add(parseTerm(childTerm as prologParser.TermContext))
         }
         return result
     }
 
+    private fun parseCurlyBracedTerm(ctx: prologParser.TermContext): Term {
+        if (ctx.text == "{}") return Atom("{}") //this line may be redundant
+        val terms = mutableListOf<Term>()
+        val name = "{}"
+        val termList = ctx.getChild(2)
+        terms.addAll(parseTermList(termList as prologParser.TermlistContext))
+        return Predicate(name, terms)
+    }
 
-    fun parseTerm(ctx: prologParser.TermContext) = when {
-        ctx.text.first().isUpperCase() -> Variable(ctx.text)
-        ctx.text.contains('(') -> parsePredicate(ctx)
+    private fun parseList(ctx: prologParser.TermContext): Term {
+        if (ctx.text == "[]") return Atom("[]") //this line may be redundant
+        val name = "[]"
+        val terms = mutableListOf<Term>()
+        val termList = ctx.getChild(1)
+        terms.addAll(parseTermList(termList as prologParser.TermlistContext))
+        if (ctx.getChild(3).text == "|") {
+            terms.add(parseTerm(ctx.getChild(4) as prologParser.TermContext))
+            return Predicate(
+                name,
+                terms + Predicate("|", listOf(parseTerm(ctx.getChild(2) as prologParser.TermContext)))
+            )
+        }
+        return Predicate(name, terms)
+    }
+
+
+    private fun parseTerm(ctx: prologParser.TermContext): Term = when {
+        // parse compound terms(i.e. atom(termlist))
+        ctx.childCount == 4 && ctx.getChild(1).text == "(" && ctx.getChild(3).text == ")" -> parseCompoundTerm(ctx)
+        // parse binary operators
+        ctx.childCount == 3 && ctx.getChild(1).text in operators -> parseBinaryOperator(ctx)
+        // parse unary operators
+        ctx.childCount == 2 && ctx.getChild(0).text in operators -> parseUnaryOperator(ctx)
+        // parse list terms
+        ctx.getChild(0).text == "[" && ctx.getChild(ctx.childCount - 1).text == "]" -> parseList(ctx)
+        // parse curled terms
+        ctx.getChild(0).text == "{" && ctx.getChild(ctx.childCount - 1).text == "}" -> parseCurlyBracedTerm(ctx)
+        // parse braced terms
+        ctx.getChild(0).text == "(" && ctx.getChild(2).text == ")" -> parseTerm(ctx.getChild(1) as prologParser.TermContext)
+        // parse variables
+        ctx.text.first().isUpperCase() || ctx.text.first() == '_' -> Variable(ctx.text)
         else -> Atom(ctx.text)
     }
 }

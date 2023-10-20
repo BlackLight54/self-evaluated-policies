@@ -1,7 +1,7 @@
 package hu.bme.app
 
-fun main(){
-    val parser = Parser("""
+fun main() {
+    val code = """
         male(john).
 male(james).
 male(bob).
@@ -58,7 +58,14 @@ grandfather(X, Y) :-
 grandmother(X, Y) :-
     female(X),
     grandparent(X, Y).
-    """.trimIndent())
+    """.trimIndent()
+    val testCode = """
+sibling(X, Y,Y,Y,Y) :-
+    parent(Z, X),
+    parent(Z, Y),
+    X \= Y.
+    """.trimIndent()
+    val parser = Parser(testCode)
 
     parser.parse()
 }
