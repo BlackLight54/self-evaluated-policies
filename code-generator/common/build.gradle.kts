@@ -8,6 +8,10 @@ dependencies {
     antlr("org.antlr:antlr4:4.13.1")
 }
 
+tasks.named("compileKotlin") {
+    dependsOn("generateGrammarSource")
+}
+
 tasks.test {
     useJUnitPlatform()
 }

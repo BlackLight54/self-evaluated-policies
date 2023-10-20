@@ -47,7 +47,7 @@ class Predicate(name: String, val terms: List<Term>) : Term(name){
     }
 
     override fun toString(): String {
-        return "Predicate(terms=$terms)"
+        return "Predicate(name=$name,terms=$terms)"
     }
 
 
