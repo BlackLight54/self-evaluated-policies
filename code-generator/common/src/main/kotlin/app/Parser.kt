@@ -1,127 +1,116 @@
 package hu.bme.app
 
-object Parser {
-    val SPECIAL_TERMS = listOf(" is ", ">", "<", ">=", "=<",  "\\=", "==","+","-","*","/","\\")
-    fun parseProlog(prologCode: String): List<Clause> {
-        val clauses = mutableListOf<Clause>()
+import org.antlr.v4.runtime.CharStreams
+import org.antlr.v4.runtime.CommonTokenStream
+import org.antlr.v4.runtime.tree.ParseTree
+import org.antlr.v4.runtime.tree.ParseTreeWalker
+import prologBaseListener
+import prologLexer
+import prologParser
 
-        val mergedLines = preprocessPrologCode(prologCode)
-        for (line in mergedLines) {
-            clauses.add(parseClause(line))
-        }
 
-        return clauses
+class Parser(val code: String) : prologBaseListener() {
+
+    val result = mutableListOf<Clause>()
+
+    fun parse() {
+        val lexer = prologLexer(CharStreams.fromString(code))
+        val tokens = CommonTokenStream(lexer)
+        val parser = prologParser(tokens)
+        val tree: ParseTree = parser.p_text()
+
+        val walker = ParseTreeWalker()
+        walker.walk(this, tree)
     }
 
 
-    fun preprocessPrologCode(prologCode: String): List<String> {
-        val lines = prologCode.lines()
-        val mergedLines = mutableListOf<String>()
-        var currentLine = StringBuilder()
+    override fun exitClause(ctx: prologParser.ClauseContext?) {
 
-        for (line in lines) {
-            val trimmedLine = line.trim()
-            if (trimmedLine.isNotEmpty()) {
-                currentLine.append(trimmedLine).append(" ")
-                if (trimmedLine.endsWith('.')) {
-                    mergedLines.add(currentLine.toString())
-                    currentLine = StringBuilder()
-                }
+        println("Clause:")
+        if (ctx?.term()?.getChild(1)?.text == ":-") {
+            val headTermNode = ctx.term().getChild(0)
+            val bodyTermNode = ctx.term().getChild(2)
+            println("Head: ${headTermNode?.text}")
+            println("Body: ${bodyTermNode?.text}")
+            val headPredicate = parsePredicate(headTermNode!! as prologParser.TermContext)
+            val bodyPredicates = parseBody(bodyTermNode!! as prologParser.TermContext)
+            println(Clause(headPredicate, bodyPredicates))
+
+        } else {
+            println("Fact: ${ctx?.term()?.getChild(0)?.text}")
+            println(parsePredicate(ctx?.term()!!))
+        }
+
+
+    }
+
+    fun parseBody(body: prologParser.TermContext): List<Predicate> {
+        val result = mutableListOf<Predicate>()
+        if (body.getChild(1).text == "(" && body.getChild(body.childCount - 1).text == ")") {
+            result.add(parsePredicate(body))
+        } else {
+            for (i in 0 until body.childCount) {
+                if (body.getChild(i).text == ",") continue
+                result.add(parsePredicate(body.getChild(i) as prologParser.TermContext))
             }
         }
-
-        if (currentLine.isNotEmpty()) {
-            mergedLines.add(currentLine.toString())
-        }
-
-        return mergedLines
+        return result
     }
 
-
-    fun parseClause(clauseStr: String): Clause {
-        val parts = clauseStr.split(":-")
-        val head = parsePredicate(parts[0].trim().trimEnd('.'))
-
-        val body = if (parts.size > 1) {
-            splitPredicates(parts[1].trim()).map { parsePredicate(it.trim()) }
-        } else {
-            emptyList()
+    fun parsePredicate(ctx: prologParser.TermContext): Predicate {
+        var name = ""
+        val terms = mutableListOf<Term>()
+        // parse atom(termlist) format predicates
+        if (ctx.childCount == 4 && ctx.getChild(1).text == "(" && ctx.getChild(3).text == ")") {
+            name = ctx.getChild(0).text!!
+            val termList = ctx.getChild(2)
+            terms.addAll(parseTermList(termList as prologParser.TermlistContext))
         }
-
-        return Clause(head, body)
-    }
-
-    fun splitPredicates(bodyStr: String): List<String> {
-        val predicates = mutableListOf<String>()
-        var start = 0
-        var depth = 0
-        var listDepth = 0  // to handle lists
-
-        for ((index, char) in bodyStr.withIndex()) {
-            if (char == '(') depth++
-            if (char == ')') depth--
-            if (char == '[') listDepth++
-            if (char == ']') listDepth--
-            if (char == ',' && depth == 0 && listDepth == 0) {
-                predicates.add(bodyStr.substring(start, index).trim())
-                start = index + 1
-            }
+        // parse binary operators
+        else if (ctx.childCount == 3 && ctx.getChild(1).text != ",") {
+            name = ctx.getChild(1).getChild(0).text!!
+            terms.add(parseTerm(ctx.getChild(0) as prologParser.TermContext))
+            terms.add(parseTerm(ctx.getChild(2) as prologParser.TermContext))
         }
-
-        predicates.add(bodyStr.substring(start).trim())
-
-        return predicates
-    }
-
-    fun parsePredicate(predStr: String): Predicate {
-        val name = predStr.substringBefore("(").trim()
-        // Handle arithmetics
-        if (SPECIAL_TERMS.any { predStr.contains(it) }) {
-            val predicate = parseSpecialPredicate(name)
-            return if(predicate is Predicate) predicate as Predicate else error("$predStr is not a predicate")
+        // parse unary operators
+        else if (ctx.childCount == 2) {
+            name = ctx.getChild(0).text!!
+            terms.add(parseTerm(ctx.getChild(1) as prologParser.TermContext))
         }
-        val termsStr = if (predStr.contains("(")) predStr.substringAfter("(").trimEnd(')', '.',',').trim() else ""
-        val terms = if (termsStr.isNotEmpty()) {
-            termsStr.split(",").map { parseTerm(it.trim()) }
-        } else {
-            emptyList()
+        // parse compund terms
+        else if (ctx.childCount > 2) {
+            name = ctx.getChild(0).text!!
+            terms.addAll(parseCompundTerm(ctx))
         }
 
         return Predicate(name, terms)
     }
 
-    // Parse arithmetics
-    fun parseSpecialPredicate(predStr: String): Term {
-        // Return if empty recursive call
-        if (predStr.isEmpty()) return Predicate("", emptyList())
-        // Find the special term name in the specialTerms list
-        val specialTerm = SPECIAL_TERMS.find { predStr.contains(it) } ?: predStr
-        return if(predStr != specialTerm) {
-            // Split the predicate string into the left and right side of the special term
-            val parts = predStr.split(specialTerm)
-            val left = parseTerm(parts[0].trim())
-            val rightPredicate = parseSpecialPredicate(parts[1].trim())
-            // Return the predicate
-            Predicate(specialTerm, listOf(left, rightPredicate))
+    fun parseTermList(termListCtx: prologParser.TermlistContext): List<Term> {
+        val result = mutableListOf<Term>()
+        val child = termListCtx.getChild(0)
+        if (child.childCount == 1) {
+            result.add(parseTerm(child as prologParser.TermContext))
         } else {
-            parseTerm(predStr)
+           result.addAll(parseCompundTerm(child as prologParser.TermContext))
         }
-
+        println("TermList:$result")
+        return result
     }
 
-    fun parseTerm(termStr: String): Term {
-        val trimmedTerm = termStr.trimEnd('.').trim()
-
-        // Handle list structures, assuming simple cases for now
-        if (trimmedTerm.startsWith("[") && trimmedTerm.endsWith("]")) {
-            return Atom(trimmedTerm)
+    fun parseCompundTerm(compoundTerm: prologParser.TermContext): List<Term> {
+        val result = mutableListOf<Term>()
+        for (j in 0 until compoundTerm.childCount) {
+            if (compoundTerm.getChild(j).text == ",") continue
+            result.add(parseTerm(compoundTerm.getChild(j) as prologParser.TermContext))
         }
-
-        return when {
-            trimmedTerm.first().isUpperCase() -> Variable(trimmedTerm)
-            else -> Atom(trimmedTerm)
-        }
+        return result
     }
 
 
+    fun parseTerm(ctx: prologParser.TermContext) = when {
+        ctx.text.first().isUpperCase() -> Variable(ctx.text)
+        ctx.text.contains('(') -> parsePredicate(ctx)
+        else -> Atom(ctx.text)
+    }
 }
