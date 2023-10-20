@@ -3,6 +3,7 @@
  */
 package hu.bme.app
 
+import app.model.ResolutionTree
 import java.io.File
 import java.lang.StringBuilder
 import java.util.*
@@ -371,6 +372,54 @@ grandmother(X, Y) :-
     mapping.forEach { (name, index) ->
         println("'$name': $index,")
     }
+    val treeJson = "{\n" +
+            "  \"goal\":\"grandfather(john,mary)\",\n" +
+            "  \"substitution\": [],\n" +
+            "  \"term\": {\"args\": [\"john\", \"mary\" ], \"name\":\"grandfather\"},\n" +
+            "  \"unification\": {\n" +
+            "    \"body\": [\"male(john)\", \"grandparent(john,mary)\" ],\n" +
+            "    \"goal\":\"grandfather(john,mary)\"\n" +
+            "  },\n" +
+            "  \"ztree\": [\n" +
+            "    {\n" +
+            "      \"goal\":\"male(john)\",\n" +
+            "      \"substitution\": [],\n" +
+            "      \"term\": {\"args\": [\"john\" ], \"name\":\"male\"},\n" +
+            "      \"unification\": {\"body\": [\"true\" ], \"goal\":\"male(john)\"},\n" +
+            "      \"ztree\": [\"true\" ]\n" +
+            "    },\n" +
+            "    {\n" +
+            "      \"goal\":\"grandparent(john,mary)\",\n" +
+            "      \"substitution\": [],\n" +
+            "      \"term\": {\"args\": [\"john\", \"mary\" ], \"name\":\"grandparent\"},\n" +
+            "      \"unification\": {\n" +
+            "        \"body\": [\"parent(john,lisa)\", \"parent(lisa,mary)\" ],\n" +
+            "        \"goal\":\"grandparent(john,mary)\"\n" +
+            "      },\n" +
+            "      \"ztree\": [\n" +
+            "        {\n" +
+            "          \"goal\":\"parent(john,lisa)\",\n" +
+            "          \"substitution\": [],\n" +
+            "          \"term\": {\"args\": [\"john\", \"lisa\" ], \"name\":\"parent\"},\n" +
+            "          \"unification\": {\"body\": [\"true\" ], \"goal\":\"parent(john,lisa)\"},\n" +
+            "          \"ztree\": [\"true\" ]\n" +
+            "        },\n" +
+            "        {\n" +
+            "          \"goal\":\"parent(lisa,mary)\",\n" +
+            "          \"substitution\": [],\n" +
+            "          \"term\": {\"args\": [\"lisa\", \"mary\" ], \"name\":\"parent\"},\n" +
+            "          \"unification\": {\"body\": [\"true\" ], \"goal\":\"parent(lisa,mary)\"},\n" +
+            "          \"ztree\": [\"true\" ]\n" +
+            "        }\n" +
+            "      ]\n" +
+            "    }\n" +
+            "  ]\n" +
+            "}"
+
+    var tree = ResolutionTree.parseJson(treeJson,mapping)
+    println(tree)
+    tree = tree.standardize(maxDepth_input = 4, branchingFactor_input = 3,unificationCount_input = 3)
+    println(tree.toBFSJson())
 }
 
 
