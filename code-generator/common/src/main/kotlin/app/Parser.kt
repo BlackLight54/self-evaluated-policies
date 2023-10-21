@@ -19,11 +19,13 @@ class Parser : prologBaseListener() {
             val clauses = parseProlog(programString)
             return clauses[0].head
         }
+
         fun parseTerm(termString: String): Term {
             val programString = "$termString."
             val clauses = parseProlog(programString)
             return clauses[0].head
         }
+
         fun parseClause(clauseString: String): Clause {
             val programString = "$clauseString."
             val clauses = parseProlog(programString)
@@ -135,8 +137,19 @@ class Parser : prologBaseListener() {
 
 
 
+
     private fun parseListLinkedWithBinaryOperators(list: prologParser.TermContext): List<Term> {
         val result = mutableListOf<Term>()
+//        println("term: ${list.text}")
+//        list.children.map {
+//            if (it is prologParser.TermContext) {
+//                     println("checkedterm: ${it.text}")
+//                 if (it.parent.getChild(1)?.text == ",") {
+//                    result.add(parseTerm(it))
+//                }
+//            }
+//        }
+//        println("result: $result")
         if (list.childCount == 1) {
             result.add(parseTerm(list))
         } else if (list.getChild(1)?.text == ",") {
@@ -210,6 +223,7 @@ class Parser : prologBaseListener() {
     }
 
     private fun parseTerm(ctx: prologParser.TermContext): Term = when {
+//        ctx.getChild(1)?.text == ";" -> parseDisjunction(ctx)
         // parse true, because true/0 is a built-in predicate
         ctx.childCount == 1 && ctx.getChild(0).text == "true" -> Predicate("true", listOf())
         // parse built-in predicates
@@ -230,7 +244,14 @@ class Parser : prologBaseListener() {
         ctx.text.first().isUpperCase() || ctx.text.first() == '_' -> Variable(ctx.text)
         ctx.text in zeroTermPedicates -> atomToPredicate(Atom(ctx.text))
         else -> Atom(ctx.text)
+    }.also {
+//        if (it.name == ",") throw Exception("Comma in term: ${ctx.text}")
+//        if (it.name  == ";")  throw Exception("Semicolon in term: ${ctx.text}")
     }
+
+//    private fun parseDisjunction(ctx: prologParser.TermContext): Term {
+//        ctx.ge
+//    }
 
 
 }

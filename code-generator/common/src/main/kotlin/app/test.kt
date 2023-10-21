@@ -1,5 +1,6 @@
 package hu.bme.app
 
+
 fun main() {
     val grandparent_code = """
         male(john).
@@ -188,6 +189,7 @@ sibling(X, Y,Y,Y,Y) :-
             halt(0).
     """.trimIndent()
     val parser = Parser()
-
+//    val genson = GensonBuilder().useIndentation(true).create()
+//    println(genson.serialize(parser.parse(policy_code)))
     println(parser.parse(policy_code))
 }
