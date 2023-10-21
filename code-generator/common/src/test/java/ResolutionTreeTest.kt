@@ -104,7 +104,17 @@ class ResolutionTreeTest {
     // Parse json test
     @Test
     fun testParseJson() {
-        val json = "{\"goal\":\"ancestor(anne,carol)\",\"unification\":{\"body\":[\"parent(anne,X)\",\"ancestor(X,carol)\"],\"goal\":\"ancestor(anne,carol)\"},\"ztree\":[{\"goal\":\"parent(anne,bob)\",\"unification\":{\"body\":[\"true\"],\"goal\":\"parent(anne,bob)\"},\"ztree\":[\"true\"]},{\"goal\":\"ancestor(bob,carol)\",\"unification\":{\"body\":[\"parent(bob,carol)\"],\"goal\":\"ancestor(bob,carol)\"},\"ztree\":[{\"goal\":\"parent(bob,carol)\",\"unification\":{\"body\":[\"true\"],\"goal\":\"parent(bob,carol)\"},\"ztree\":[\"true\"]}]}]}"
+        val json = "{\"goal\":\"ancestor(anne,carol)\"," +
+                "\"unification\":{" +
+                    "\"body\":" +
+                        "[\"parent(anne,X)\"," +
+                        "\"ancestor(X,carol)\"]" +
+                    ",\"goal\":" +
+                        "\"ancestor(anne,carol)\"}," +
+                "\"ztree\":" +
+                    "[" +
+                        "{\"goal\":" +
+                            "\"parent(anne,bob)\",\"unification\":{\"body\":[\"true\"],\"goal\":\"parent(anne,bob)\"},\"ztree\":[\"true\"]},{\"goal\":\"ancestor(bob,carol)\",\"unification\":{\"body\":[\"parent(bob,carol)\"],\"goal\":\"ancestor(bob,carol)\"},\"ztree\":[{\"goal\":\"parent(bob,carol)\",\"unification\":{\"body\":[\"true\"],\"goal\":\"parent(bob,carol)\"},\"ztree\":[\"true\"]}]}]}"
         val mapping = mapOf("anne" to 1, "bob" to 2, "carol" to 3, "parent" to 4, "ancestor" to 5, "true" to 6, "X" to 8)
         val tree = ResolutionTree.parseJson(json, mapping)
         assertEquals(listOf(5, 1, 3), tree.goal)

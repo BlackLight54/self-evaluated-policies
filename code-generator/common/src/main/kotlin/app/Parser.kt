@@ -19,6 +19,17 @@ class Parser : prologBaseListener() {
             val clauses = parseProlog(programString)
             return clauses[0].head
         }
+        fun parseTerm(termString: String ) : Term {
+            val programString = "$termString."
+            val clauses = parseProlog(programString)
+            return clauses[0].head
+        }
+        fun parseClause(clauseString: String) : Clause {
+            val programString = "$clauseString."
+            val clauses = parseProlog(programString)
+            return clauses[0]
+        }
+
         val OPERATORS = listOf(
             ":-",
             "-->",
@@ -62,6 +73,10 @@ class Parser : prologBaseListener() {
             "**",
             "^",
             "\\"
+        )
+
+        val BUILT_INS = listOf(
+            "findall",
         )
 
         val SPECIAL_TERMS = listOf(
@@ -168,6 +183,10 @@ class Parser : prologBaseListener() {
 
 
     private fun parseTerm(ctx: prologParser.TermContext): Term = when {
+        // parse true, because true/0 is a built-in predicate
+        ctx.childCount == 1 && ctx.getChild(0).text == "true" -> Predicate("true", listOf())
+        // parse built-in predicates
+        ctx.getChild(0).text in BUILT_INS -> Predicate(ctx.getChild(0).text, parseCommaDelimitedList(ctx.getChild(2) as prologParser.TermContext))
         // parse compound terms(i.e. atom(termlist))
         ctx.childCount == 4 && ctx.getChild(1).text == "(" && ctx.getChild(3).text == ")" -> parseCompoundTerm(ctx)
         // parse binary operators

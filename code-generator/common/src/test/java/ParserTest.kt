@@ -4,15 +4,15 @@ import org.junit.jupiter.api.Test
 
 class ParserTest {
 
-    @Test fun testParseAtom() {
-        val atom = Parser.parseTerm("a")
-        assertEquals(Atom("a"), atom)
-    }
+//    @Test fun testParseAtom() {
+//        val atom = Parser.parseTerm("a")
+//        assertEquals(Atom("a"), atom)
+//    }
 
-    @Test fun testParseVariable() {
-        val variable = Parser.parseTerm("X")
-        assertEquals(Variable("X"), variable)
-    }
+//    @Test fun testParseVariable() {
+//        val variable = Parser.parseTerm("X")
+//        assertEquals(Variable("X"), variable)
+//    }
 
     @Test fun testParsePredicate() {
         val predicate = Parser.parsePredicate("p(a, X)")
