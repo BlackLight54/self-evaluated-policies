@@ -127,7 +127,7 @@ data class ResolutionTree(var goal: List<Int>, var unification: List<List<Int>>,
     }
 
     companion object {
-       /* fun parseJson(json: String, mapping: Map<String, Int>): ResolutionTree {
+        fun parseJson(json: String, mapping: Map<String, Int>): ResolutionTree {
             val jsonObject = try {
                 JSONObject(json)
             } catch (e: JSONException) {
@@ -145,7 +145,7 @@ data class ResolutionTree(var goal: List<Int>, var unification: List<List<Int>>,
                 val children = listOf<ResolutionTree>()
                 return ResolutionTree(goal, unification, children)
             }
-        }*/
+        }
     }
 
 }

@@ -5,9 +5,8 @@ package hu.bme.app
 
 import app.model.ResolutionTree
 import java.io.File
-import java.lang.StringBuilder
 import java.util.*
-
+import hu.bme.app.Parser
 fun main() {
 
     val prologCode = """

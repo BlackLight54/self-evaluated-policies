@@ -2,68 +2,86 @@ package hu.bme.app
 
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
-import org.antlr.v4.runtime.tree.ParseTree
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import prologBaseListener
 import prologLexer
 import prologParser
 
 
-class Parser(val code: String) : prologBaseListener() {
+class Parser : prologBaseListener() {
+    companion object {
+        fun parseProlog(code: String): MutableList<Clause> {
+            return Parser().parse(code)
+        }
 
-    val operators = listOf(
-        ":-",
-        "-->",
-        "?-",
-        "dynamic",
-        "multifile",
-        "discontiguous",
-        "public",
-        ";",
-        "->",
-        ",",
-        "\\+",
-        "=",
-        "\\=",
-        "==",
-        "\\==",
-        "@<",
-        "@=<",
-        "@>",
-        "@>=",
-        "=..",
-        "is",
-        "=:=",
-        "=\\=",
-        "<",
-        "=<",
-        ">",
-        ">=",
-        ":",
-        "+",
-        "-",
-        "/\\",
-        "\\/",
-        "*",
-        "/",
-        "//",
-        "rem",
-        "mod",
-        "<<",
-        ">>",
-        "**",
-        "^",
-        "\\"
-    )
+        fun parsePredicate(predicateString: String) : Predicate {
+            val programString = "$predicateString."
+            val clauses = parseProlog(programString)
+            return clauses[0].head
+        }
+        val OPERATORS = listOf(
+            ":-",
+            "-->",
+            "?-",
+            "dynamic",
+            "multifile",
+            "discontiguous",
+            "public",
+            ";",
+            "->",
+            ",",
+            "\\+",
+            "=",
+            "\\=",
+            "==",
+            "\\==",
+            "@<",
+            "@=<",
+            "@>",
+            "@>=",
+            "=..",
+            "is",
+            "=:=",
+            "=\\=",
+            "<",
+            "=<",
+            ">",
+            ">=",
+            ":",
+            "+",
+            "-",
+            "/\\",
+            "\\/",
+            "*",
+            "/",
+            "//",
+            "rem",
+            "mod",
+            "<<",
+            ">>",
+            "**",
+            "^",
+            "\\"
+        )
+
+        val SPECIAL_TERMS = listOf(
+            "{}",
+            "[]"
+        ) // TODO: What are the special terms?
+    }
+
 
     val result = mutableListOf<Clause>()
 
-    fun parse() {
+    fun parse(code: String): MutableList<Clause> {
         val lexer = prologLexer(CharStreams.fromString(code))
         val tokens = CommonTokenStream(lexer)
         val parser = prologParser(tokens)
 
         ParseTreeWalker.DEFAULT.walk(this, parser.p_text())
+        val res = result.toMutableList()
+        result.clear()
+        return res
     }
 
 
@@ -73,21 +91,21 @@ class Parser(val code: String) : prologBaseListener() {
             val headTermNode = ctx.term().getChild(0)
             val bodyTermNode = ctx.term().getChild(2)
             val headPredicate = parseTerm(headTermNode!! as prologParser.TermContext)
-            val bodyPredicates = parseBody(bodyTermNode!! as prologParser.TermContext)
-            println(Clause(headPredicate as Predicate, bodyPredicates.map { it as Predicate }))
+            val bodyPredicates = parseCommaDelimitedList(bodyTermNode!! as prologParser.TermContext)
+//            println(Clause(headPredicate as Predicate, bodyPredicates.map { it as Predicate }))
+            result.add(Clause(headPredicate as Predicate, bodyPredicates.map { it as Predicate }))
 
         } else {
-            println(parseTerm(ctx?.term()!!))
+//            println(parseTerm(ctx?.term()!!))
+            result.add(Clause(parseTerm(ctx!!.term()!!) as Predicate, listOf()))
         }
-
-
     }
 
-    private fun parseBody(body: prologParser.TermContext): List<Term> {
+    private fun parseCommaDelimitedList(body: prologParser.TermContext): List<Term> {
         val result = mutableListOf<Term>()
         if (body.getChild(1)?.text == ",") {
             result.add(parseTerm(body.getChild(0) as prologParser.TermContext))
-            result.addAll(parseBody(body.getChild(2) as prologParser.TermContext))
+            result.addAll(parseCommaDelimitedList(body.getChild(2) as prologParser.TermContext))
         } else {
             result.add(parseTerm(body))
         }
@@ -118,23 +136,10 @@ class Parser(val code: String) : prologBaseListener() {
     }
 
     private fun parseTermList(termListCtx: prologParser.TermlistContext): List<Term> {
-
         val childTerm = termListCtx.getChild(0)
-        return parseTermListInner(childTerm)
+        return parseCommaDelimitedList(childTerm as prologParser.TermContext)
     }
 
-    private fun parseTermListInner(
-        childTerm: ParseTree
-    ): MutableList<Term> {
-        val result = mutableListOf<Term>()
-        if (childTerm.getChild(1)?.text == ",") {
-            result.add(parseTerm(childTerm.getChild(0) as prologParser.TermContext))
-            result.addAll(parseTermListInner(childTerm.getChild(2)))
-        } else {
-            result.add(parseTerm(childTerm as prologParser.TermContext))
-        }
-        return result
-    }
 
     private fun parseCurlyBracedTerm(ctx: prologParser.TermContext): Term {
         if (ctx.text == "{}") return Atom("{}") //this line may be redundant
@@ -166,9 +171,9 @@ class Parser(val code: String) : prologBaseListener() {
         // parse compound terms(i.e. atom(termlist))
         ctx.childCount == 4 && ctx.getChild(1).text == "(" && ctx.getChild(3).text == ")" -> parseCompoundTerm(ctx)
         // parse binary operators
-        ctx.childCount == 3 && ctx.getChild(1).text in operators -> parseBinaryOperator(ctx)
+        ctx.childCount == 3 && ctx.getChild(1).text in OPERATORS -> parseBinaryOperator(ctx)
         // parse unary operators
-        ctx.childCount == 2 && ctx.getChild(0).text in operators -> parseUnaryOperator(ctx)
+        ctx.childCount == 2 && ctx.getChild(0).text in OPERATORS -> parseUnaryOperator(ctx)
         // parse list terms
         ctx.getChild(0).text == "[" && ctx.getChild(ctx.childCount - 1).text == "]" -> parseList(ctx)
         // parse curled terms
