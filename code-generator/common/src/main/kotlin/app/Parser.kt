@@ -8,40 +8,68 @@ import prologLexer
 import prologParser
 import prologParser.TermlistContext
 
-
+/**
+ * The Parser class is responsible for parsing Prolog code and generating a list of clauses.
+ */
 class Parser : prologBaseListener() {
     companion object {
+        /**
+         * Parses the given Prolog code and returns a list of clauses.
+         *
+         * @param code the Prolog code to parse
+         * @return a list of clauses
+         */
         fun parseProlog(code: String): MutableList<Clause> {
             return Parser().parse(code)
         }
 
+        /**
+         * Parses the given predicate string and returns a Predicate object.
+         *
+         * @param predicateString the predicate string to parse
+         * @return a Predicate object
+         */
         fun parsePredicate(predicateString: String): Predicate {
             val programString = "$predicateString."
             val clauses = parseProlog(programString)
             return clauses[0].head
         }
 
+        /**
+         * Parses the given term string and returns a Term object.
+         *
+         * @param termString the term string to parse
+         * @return a Term object
+         */
         fun parseTerm(termString: String): Term {
             val programString = "$termString."
             val clauses = parseProlog(programString)
             return clauses[0].head
         }
 
+        /**
+         * Parses the given clause string and returns a Clause object.
+         *
+         * @param clauseString the clause string to parse
+         * @return a Clause object
+         */
         fun parseClause(clauseString: String): Clause {
             val programString = "$clauseString."
             val clauses = parseProlog(programString)
             return clauses[0]
         }
-
+        /**
+         * The list of Prolog operators, excluding ":-", "," and ";"
+         */
         val OPERATORS = listOf(
-            ":-",
+//            ":-",
             "-->",
             "?-",
             "dynamic",
             "multifile",
             "discontiguous",
             "public",
-            ";",
+//            ";",
             "->",
             ",",
             "\\+",
@@ -78,22 +106,39 @@ class Parser : prologBaseListener() {
             "\\"
         )
 
+        /**
+         * The list of built-in Prolog predicates.
+         */
         val BUILT_INS = listOf(
             "findall",
             "nl"
         )
 
+        /**
+         * The list of special Prolog terms.
+         *
+         * TODO: What are the special terms exactly?
+         */
         val SPECIAL_TERMS = listOf(
             "{}",
             "[]"
-        ) // TODO: What are the special terms?
+        )
     }
 
-    var zeroTermPedicates: Set<String> = setOf()
+    private var zeroTermPedicates: Set<String> = setOf()
 
-    val result = mutableListOf<Clause>()
+    private val result = mutableListOf<Clause>()
 
-    fun parse(code: String): MutableList<Clause> {
+    /**
+     * Parses the given Prolog code and returns a list of clauses.
+     *
+     * This function is called by the companion object's parseProlog function.
+     * Goes through the steps of parsing the code using ANTLR.
+     *
+     * @param code the Prolog code to parse
+     * @return a list of clauses
+     */
+    private fun parse(code: String): MutableList<Clause> {
         val lexer = prologLexer(CharStreams.fromString(code))
         val tokens = CommonTokenStream(lexer)
         val parser = prologParser(tokens)
@@ -104,37 +149,39 @@ class Parser : prologBaseListener() {
         return res
     }
 
-    //handles true/0, false/0 and other/0 type predicates
-    fun atomToPredicate(atom: Atom): Predicate {
+    /**
+     * Handles true/0, false/0 and other/0 type predicates
+     *
+     */
+    private fun atomToZeroTermPredicate(atom: Atom): Predicate {
         zeroTermPedicates = zeroTermPedicates.plus(atom.name)
         return Predicate(atom.name, listOf())
     }
 
+    /**
+     * Handles the clause rule. Adds the parsed clause to the result list.
+     *
+     * Disjoint bodies are treated as separate clauses. The ";" operator is reified in the grammar to return a list of bodies as termlists.
+     *
+     * @param ctx the clause context
+     */
     override fun exitClause(ctx: prologParser.ClauseContext?) {
         ctx?.fact()?.let {
             result.add(Clause(parseTerm(it.term()!!) as Predicate, listOf()))
         }
-        ctx?.rule_()?.let {
-            val headTermNode = it.head().term()
-            val bodyTermListNodes = it.body().termlist()
-            var headPredicate = parseTerm(headTermNode!!)
-            if (headPredicate is Atom) {
-                // if head is atom, it must be a predicate with zero terms, e.g. true/0
-                headPredicate = atomToPredicate(headPredicate)
-            }
-            val bodies = MutableList(bodyTermListNodes.size) { mutableListOf<Predicate>() }
-            bodyTermListNodes.forEachIndexed { index, bodyTermListNode ->
-                val bodyPredicates = bodies[index]
+        ctx?.rule_()?.let { ruleContext ->
+            val headTermContext = ruleContext.head().term()
+            val bodyTermListContexts = ruleContext.body().termlist()
+            val head = parseTerm(headTermContext!!)
+            // each disjoint body is treated as separate clause
+            val bodies = MutableList(bodyTermListContexts.size) { mutableListOf<Predicate>() }
+            bodyTermListContexts.forEachIndexed { index, bodyTermListNode ->
                 parseTermList(bodyTermListNode).forEach { term ->
-                    if (term is Atom) {
-                        // if an element of body is atom, it must be a predicate with zero terms, e.g. true/0
-                        bodyPredicates.add(atomToPredicate(term))
-                    } else
-                    bodyPredicates.add(term as Predicate)
+                    bodies[index].add(term as? Predicate ?: atomToZeroTermPredicate(term as Atom))
                 }
             }
             bodies.forEach() {
-                result.add(Clause(headPredicate as Predicate, it))
+                result.add(Clause(head as? Predicate ?: atomToZeroTermPredicate(head as Atom), it))
             }
         }
     }
@@ -163,9 +210,12 @@ class Parser : prologBaseListener() {
         return Predicate(name, terms)
     }
 
+    /**
+     * Parses a list of terms. Replacement for the "," operator, and used on the "termlist" grammar rule.
+     */
     private fun parseTermList(termListCtx: prologParser.TermlistContext): List<Term> {
         return termListCtx.term()?.map {
-            // only parse the ter,. if its not ','
+            // only parse the term if it's not ','
             if (it.text != ",") parseTerm(it as prologParser.TermContext) else null
         }!!.filterNotNull()
     }
@@ -227,13 +277,11 @@ class Parser : prologBaseListener() {
         }
         // parse variables
         ctx.text.first().isUpperCase() || ctx.text.first() == '_' -> Variable(ctx.text)
-        ctx.text in zeroTermPedicates -> atomToPredicate(Atom(ctx.text))
+        ctx.text in zeroTermPedicates -> atomToZeroTermPredicate(Atom(ctx.text))
         else -> Atom(ctx.text)
     }.also {
         if (it.name == ",") throw Exception("Comma in term: ${ctx.text}")
         if (it.name  == ";")  throw Exception("Semicolon in term: ${ctx.text}")
     }
-
-
 
 }
