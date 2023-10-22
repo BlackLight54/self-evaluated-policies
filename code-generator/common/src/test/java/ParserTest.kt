@@ -4,15 +4,6 @@ import org.junit.jupiter.api.Test
 
 class ParserTest {
 
-//    @Test fun testParseAtom() {
-//        val atom = Parser.parseTerm("a")
-//        assertEquals(Atom("a"), atom)
-//    }
-
-//    @Test fun testParseVariable() {
-//        val variable = Parser.parseTerm("X")
-//        assertEquals(Variable("X"), variable)
-//    }
 
     @Test fun testParsePredicate() {
         val predicate = Parser.parsePredicate("p(a, X)")
@@ -134,6 +125,114 @@ class ParserTest {
                 listOf(
                     Predicate("\\=", listOf(Variable("X"), Variable("Y")))
                 )
+            )
+        ), clauses)
+    }
+
+    // Test comments
+    @Test fun testParseComments() {
+        val prologCode = """
+            % Knowledge base
+            q(a).
+            q(b).
+            % This is a comment
+            p(X) :- q(X). % This is another comment
+        """.trimIndent()
+
+        val clauses = Parser.parseProlog(prologCode)
+        assertEquals(listOf(
+            Clause(
+                Predicate("q", listOf(Atom("a"))),
+                emptyList()
+            ),
+            Clause(
+                Predicate("q", listOf(Atom("b"))),
+                emptyList()
+            ),
+            Clause(
+                Predicate("p", listOf(Variable("X"))),
+                listOf(
+                    Predicate("q", listOf(Variable("X")))
+                )
+            )
+        ), clauses)
+    }
+
+    @Test fun testParseList() {
+        val prologCode = """
+            p([a, b, c]).
+            q([a, b, c | X]).
+            r([a, b, c | X]) :- s(X).
+            s([a, b, c],d).
+            t([a, b], [c, d]).
+            u([a, b | X]) :- u(X).
+            u([]).
+        """.trimIndent()
+
+        val clauses = Parser.parseProlog(prologCode)
+        assertEquals(listOf(
+            Clause(
+                Predicate("p", listOf(Predicate(".", listOf(Atom("a"), Predicate(".", listOf(Atom("b"), Predicate(".", listOf(Atom("c"))))))))),
+                emptyList()
+            ),
+            Clause(
+                Predicate("q", listOf(Predicate(".", listOf(Atom("a"), Predicate(".", listOf(Atom("b"), Predicate(".", listOf(Atom("c"), Variable("X"))))))))),
+                emptyList()
+            ),
+            Clause(
+                Predicate("r", listOf(Predicate(".", listOf(Atom("a"), Predicate(".", listOf(Atom("b"), Predicate(".", listOf(Atom("c"), Variable("X"))))))))),
+                listOf(
+                    Predicate("s", listOf(Variable("X")))
+                )
+            ),
+            Clause(
+                Predicate("s", listOf(Predicate(".", listOf(Atom("a"), Predicate(".", listOf(Atom("b"), Predicate(".", listOf(Atom("c"))))))), Atom("d"))),
+                emptyList()
+            ),
+            Clause(
+                Predicate("t", listOf(Predicate(".", listOf(Atom("a"), Predicate(".", listOf(Atom("b"))))), Predicate(".", listOf(Atom("c"), Predicate(".", listOf(Atom("d"))))))),
+                emptyList()
+            ),
+            Clause(
+                Predicate("u", listOf(Predicate(".", listOf(Atom("a"), Predicate(".", listOf(Atom("b"), Variable("X"))))))),
+                listOf(
+                    Predicate("u", listOf(Variable("X")))
+                )
+            ),
+            Clause(
+                Predicate("u", listOf(Predicate(".", listOf()))),
+                emptyList()
+            )
+        ), clauses)
+    }
+
+    // Test tuple management
+    @Test
+    fun testTuple() {
+        val code = """
+            p((a,b)).
+            q((a, b), c).
+            r((a, b), (c, d)).
+            s((_, b), c).
+        """.trimIndent()
+
+        val clauses = Parser.parseProlog(code)
+        assertEquals(listOf(
+            Clause(
+                Predicate("p", listOf(Predicate(",", listOf(Atom("a"), Atom("b"))))),
+                emptyList()
+            ),
+            Clause(
+                Predicate("q", listOf(Predicate(",", listOf(Atom("a"), Atom("b"))), Atom("c"))),
+                emptyList()
+            ),
+            Clause(
+                Predicate("r", listOf(Predicate(",", listOf(Atom("a"), Atom("b"))), Predicate(",", listOf(Atom("c"), Atom("d"))))),
+                emptyList()
+            ),
+            Clause(
+                Predicate("s", listOf(Predicate(",", listOf(Variable("_"), Atom("b"))), Atom("c"))),
+                emptyList()
             )
         ), clauses)
     }
