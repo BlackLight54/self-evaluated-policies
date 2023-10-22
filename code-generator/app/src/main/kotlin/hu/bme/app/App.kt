@@ -10,64 +10,150 @@ import hu.bme.app.Parser
 fun main() {
 
     val prologCode = """
+% policy.pl 
+% input.pl
+monthly_consumption(1,2001).
+monthly_consumption(2,2001).
+monthly_consumption(3,2001).
+monthly_consumption(4,2001).
+monthly_consumption(5,2001).
+monthly_consumption(6,2001).
+monthly_consumption(7,2000).
+monthly_consumption(8,2000).
+monthly_consumption(9,2000).
+monthly_consumption(10,2000).
+monthly_consumption(11,2000).
+monthly_consumption(12,2000).
 
-male(john).
-male(james).
-male(bob).
-male(tom).
+currentConsumption(1400).
 
-female(anna).
-female(lisa).
-female(susan).
-female(mary).
+currentPrice(747,'HUF').
 
-parent(john, james).
-parent(john, lisa).
-parent(anna, james).
-parent(anna, lisa).
-parent(james, bob).
-parent(james, susan).
-parent(lisa, mary).
-parent(tom, mary).
+inputPayment(931220).
+% matrix.pl
+% Tresholds
+rolling_treshold('low', 0).
+rolling_treshold('mid', 3000).
+rolling_treshold('high',7000).
 
-father(X, Y) :-
-    male(X),
-    parent(X, Y).
+savings_treshold('low',250).
+savings_treshold('mid',500).
+savings_treshold('high',1000).
 
-mother(X, Y) :-
-    female(X),
-    parent(X, Y).
+% Supportmatrix
+% support_matrix(Rolling_class, savings_class, type, value)
+support_matrix('low', 'low', 'nominal', 500).
+support_matrix('low', 'mid', 'percent', 10).
+support_matrix('low', 'high', 'nominal', 500).
+support_matrix('mid', 'low', 'nominal', 500).
+support_matrix('mid', 'mid', 'nominal', 500).
+support_matrix('mid', 'high', 'nominal', 500).
+support_matrix('high', 'low', 'nominal', 500).
+support_matrix('high', 'mid', 'nominal', 500).
+support_matrix('high', 'high', 'nominal', 500).
 
+% Social Suports: social_suport(credType,type,value)
+social_suport('ChangedWorkcapacityCredential','nominal',10000).
 
-child(X, Y) :-
-    parent(Y, X).
+% Flow: 
+% 1. sum individual past consumptions
+% 2. calculate rolling consumption
+% 3. classify using rolling consumpiton
+% 4. classify using currently saved amount compared to rollingconsumption
+% 5. apply savings based support to base payement
+% 6. apply social credential based support 
 
+% === 1. Aggregate past consumptions ===
 
-sibling(X, Y) :-
-    parent(Z, X),
-    parent(Z, Y),
-    X \= Y.
+% monthlyConsumptions(MonthlyConsumptions) :- findall((Amount), monthly_consumption(_,Amount), MonthlyConsumptions).
+% monthlyConsumptions(MonthlyConsumptions) :- MonthlyConsumptions = [(1,2001),(2,2001),(3,2001),(4,2001),(5,2001),(6,2001),(7,2000),(8,2000),(9,2000),(10,2000),(11,2000),(12,2000)].
+monthlyConsumptions(MonthlyConsumptions) :- MonthlyConsumptions = [2001,2001,2001,2001,2001,2001,2000,2000,2000,2000,2000,2000].
 
-brother(X, Y) :-
-    male(X),
-    sibling(X, Y).
+sumOfMonthlyConsumptions([Amount|Tail],Sum) :- sumOfMonthlyConsumptions(Tail,SumOfTail), Sum is SumOfTail + Amount.
+sumOfMonthlyConsumptions([],0).
 
-sister(X, Y) :-
-    female(X),
-    sibling(X, Y).
+% === 2. Calculate rolling consumption ===
+rollingConsumption(Sum,Result):- 
+    Result is Sum / 12.
 
-grandparent(X, Y) :-
-    parent(X, Z),
-    parent(Z, Y).
+% === 3. classify using rolling consumption ===   
+consumptionClass(RollingConsumption,Class):-
+    rolling_treshold('high',Treshold),
+    RollingConsumption > Treshold,
+    Class = 'high';
+    rolling_treshold('mid',Treshold),
+    RollingConsumption > Treshold,
+    Class = 'mid';
+    Class = 'low'.
 
-grandfather(X, Y) :-
-    male(X),
-    grandparent(X, Y).
+% === 4. classify using savings ===
+savingsClass(RollingConsumption,Consumption,Class):-
+    savings_treshold('high',Treshold),
+    CurrentSaving is RollingConsumption - Consumption,
+    CurrentSaving > Treshold,
+    Class = 'high';
+    savings_treshold('mid',Treshold),
+    CurrentSaving is RollingConsumption - Consumption,
+    CurrentSaving > Treshold,
+    Class = 'mid';
+    savings_treshold('low',Treshold),
+    CurrentSaving is RollingConsumption - Consumption,
+    CurrentSaving > Treshold,
+    Class = 'low';
+    Class = 'none'.
 
-grandmother(X, Y) :-
-    female(X),
-    grandparent(X, Y).
+% === 5. Apply savings based support ===
+priceBase(PriceBase):-
+    currentConsumption(Amount),
+    currentPrice(Price,'HUF'),
+    PriceBase is Price * Amount.
 
+applySupport(Input, 'nominal', Value, Output):-
+    Output is Input - Value.
+applySupport(Input, 'percent', Value, Output):-
+    AmountToBeSubtracted is Input * Value / 100,
+    Output is Input - AmountToBeSubtracted.
+
+applySavingsSupport(Input, SavingsClass, RollingClass, Output):-
+    support_matrix(RollingClass, SavingsClass, Type, Value),
+    applySupport(Input, Type, Value, Output).
+
+% === 6. Apply social standing based support ===
+socialCreds(Creds):- Creds = [('ChangedWorkcapacityCredential','nominal',10000)].
+% socialCreds(Creds) :- findall((CredType,SupportType,SupportValue), social_suport(CredType,SupportType,SupportValue), Creds).
+
+applySocialSupports(Input,[(_,SupportType,SupportValue)|CredsTail],Result):-
+    applySupport(Input, SupportType, SupportValue,Output),
+    applySocialSupports(Output,CredsTail,Result).
+applySocialSupports(Input,[], Input).
+
+endPrice(Price):-
+    monthlyConsumptions(MonthlyConsumptions),
+    sumOfMonthlyConsumptions(MonthlyConsumptions,Sum),
+    rollingConsumption(Sum,RollingConsumption),
+    currentConsumption(Consumption),
+    consumptionClass(RollingConsumption,ConsumptionClass),
+    savingsClass(RollingConsumption,Consumption,SavingsClass),
+    priceBase(PriceBase),
+    applySavingsSupport(PriceBase, SavingsClass, ConsumptionClass, PriceAfterSavings),
+    socialCreds(Creds),
+    applySocialSupports(PriceAfterSavings,Creds,Price).
+
+inputPriceOk:-
+    endPrice(Price),
+    inputPrice(Price).
+
+writeSteps:-
+    monthlyConsumptions(MonthlyConsumptions),
+    sumOfMonthlyConsumptions(MonthlyConsumptions,Sum),
+    rollingConsumption(Sum,RollingConsumption),
+    currentConsumption(Consumption),
+    consumptionClass(RollingConsumption,ConsumptionClass),
+    savingsClass(RollingConsumption,Consumption,SavingsClass),
+    priceBase(PriceBase),
+    applySavingsSupport(PriceBase, SavingsClass, ConsumptionClass, PriceAfterSavings),
+    socialCreds(Creds),
+    applySocialSupports(PriceAfterSavings,Creds,Price).
     """.trimIndent()
 
     val clauses = Parser.parseProlog(prologCode)
@@ -371,54 +457,6 @@ grandmother(X, Y) :-
     mapping.forEach { (name, index) ->
         println("'$name': $index,")
     }
-    val treeJson = "{\n" +
-            "  \"goal\":\"grandfather(john,mary)\",\n" +
-            "  \"substitution\": [],\n" +
-            "  \"term\": {\"args\": [\"john\", \"mary\" ], \"name\":\"grandfather\"},\n" +
-            "  \"unification\": {\n" +
-            "    \"body\": [\"male(john)\", \"grandparent(john,mary)\" ],\n" +
-            "    \"goal\":\"grandfather(john,mary)\"\n" +
-            "  },\n" +
-            "  \"ztree\": [\n" +
-            "    {\n" +
-            "      \"goal\":\"male(john)\",\n" +
-            "      \"substitution\": [],\n" +
-            "      \"term\": {\"args\": [\"john\" ], \"name\":\"male\"},\n" +
-            "      \"unification\": {\"body\": [\"true\" ], \"goal\":\"male(john)\"},\n" +
-            "      \"ztree\": [\"true\" ]\n" +
-            "    },\n" +
-            "    {\n" +
-            "      \"goal\":\"grandparent(john,mary)\",\n" +
-            "      \"substitution\": [],\n" +
-            "      \"term\": {\"args\": [\"john\", \"mary\" ], \"name\":\"grandparent\"},\n" +
-            "      \"unification\": {\n" +
-            "        \"body\": [\"parent(john,lisa)\", \"parent(lisa,mary)\" ],\n" +
-            "        \"goal\":\"grandparent(john,mary)\"\n" +
-            "      },\n" +
-            "      \"ztree\": [\n" +
-            "        {\n" +
-            "          \"goal\":\"parent(john,lisa)\",\n" +
-            "          \"substitution\": [],\n" +
-            "          \"term\": {\"args\": [\"john\", \"lisa\" ], \"name\":\"parent\"},\n" +
-            "          \"unification\": {\"body\": [\"true\" ], \"goal\":\"parent(john,lisa)\"},\n" +
-            "          \"ztree\": [\"true\" ]\n" +
-            "        },\n" +
-            "        {\n" +
-            "          \"goal\":\"parent(lisa,mary)\",\n" +
-            "          \"substitution\": [],\n" +
-            "          \"term\": {\"args\": [\"lisa\", \"mary\" ], \"name\":\"parent\"},\n" +
-            "          \"unification\": {\"body\": [\"true\" ], \"goal\":\"parent(lisa,mary)\"},\n" +
-            "          \"ztree\": [\"true\" ]\n" +
-            "        }\n" +
-            "      ]\n" +
-            "    }\n" +
-            "  ]\n" +
-            "}"
-
-    var tree = ResolutionTree.parseJson(treeJson,mapping)
-    println(tree)
-    tree = tree.standardize(maxDepth_input = 4, branchingFactor_input = 3,unificationCount_input = 3)
-    println(tree.toBFSJson())
 }
 
 

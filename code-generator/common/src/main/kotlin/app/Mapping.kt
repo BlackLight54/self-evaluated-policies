@@ -1,8 +1,10 @@
 package hu.bme.app
 
+private var counter = 1;
+
 fun createMapping(clauses: List<Clause>) :Map<String,Int>{
     val knowledgeBase = clauses.filter { it.body.isEmpty() }
-    var counter = 1;
+
     val mapping = mutableMapOf<String, Int>()
     knowledgeBase.forEach { clause ->
         clause.head.terms.forEach { term ->
@@ -17,13 +19,12 @@ fun createMapping(clauses: List<Clause>) :Map<String,Int>{
             if (!mapping.contains(term.name) && term is Atom) {
                 mapping[term.name] = counter++
             }
+            if(term is Predicate){
+                predicateAtomMapping(term, mapping)
+            }
         }
         clause.body.forEach { predicate ->
-            predicate.terms.forEach { term ->
-                if (!mapping.contains(term.name) && term is Atom) {
-                    mapping[term.name] = counter++
-                }
-            }
+            predicateAtomMapping(predicate, mapping)
         }
     }
     // Add mapping for predicates
@@ -37,9 +38,7 @@ fun createMapping(clauses: List<Clause>) :Map<String,Int>{
             mapping[clause.head.name] = counter++
         }
         clause.body.forEach { predicate ->
-            if (!mapping.contains(predicate.name)) {
-                mapping[predicate.name] = counter++
-            }
+            predicatePredicateMapping(predicate, mapping)
         }
     }
     mapping["true"] = counter++
@@ -50,14 +49,56 @@ fun createMapping(clauses: List<Clause>) :Map<String,Int>{
             if (!mapping.contains(term.name) && term is Variable) {
                 mapping[term.name] = counter++
             }
+            if(term is Predicate){
+                predicateVariableMapping(term, mapping)
+            }
         }
         clause.body.forEach { predicate ->
-            predicate.terms.forEach { term ->
-                if (!mapping.contains(term.name) && term is Variable) {
-                    mapping[term.name] = counter++
-                }
-            }
+            predicateVariableMapping(predicate, mapping)
         }
     }
     return mapping
+}
+
+private fun predicateAtomMapping(predicate: Predicate, mapping: MutableMap<String,Int>) {
+
+    predicate.terms.forEach { term ->
+        if (!mapping.contains(term.name) && term is Atom) {
+            mapping[term.name] = counter++
+        }
+    }
+
+    predicate.terms.forEach { term ->
+        if (term is Predicate) {
+            predicateAtomMapping(term, mapping)
+        }
+    }
+}
+
+
+private fun predicateVariableMapping(predicate: Predicate, mapping: MutableMap<String,Int>) {
+
+    predicate.terms.forEach { term ->
+        if (!mapping.contains(term.name) && term is Variable) {
+            mapping[term.name] = counter++
+        }
+    }
+
+    predicate.terms.forEach { term ->
+        if (term is Predicate) {
+            predicateVariableMapping(term, mapping)
+        }
+    }
+}
+
+private fun predicatePredicateMapping(predicate: Predicate, mapping: MutableMap<String,Int>) {
+    if (!mapping.contains(predicate.name)) {
+        mapping[predicate.name] = counter++
+    }
+
+    predicate.terms.forEach { term ->
+        if (term is Predicate) {
+            predicatePredicateMapping(term, mapping)
+        }
+    }
 }
