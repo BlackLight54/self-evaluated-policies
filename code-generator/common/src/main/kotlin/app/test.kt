@@ -188,8 +188,7 @@ sibling(X, Y,Y,Y,Y) :-
             write('Input price and calcualted price match!'),nl,
             halt(0).
     """.trimIndent()
-    val parser = Parser()
 //    val genson = GensonBuilder().useIndentation(true).create()
 //    println(genson.serialize(parser.parse(policy_code)))
-    println(parser.parse(policy_code))
+    println(Parser.parseProlog(policy_code))
 }

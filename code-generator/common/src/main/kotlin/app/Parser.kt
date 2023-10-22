@@ -168,6 +168,7 @@ class Parser : prologBaseListener() {
     override fun exitClause(ctx: prologParser.ClauseContext?) {
         ctx?.fact()?.let {
             result.add(Clause(parseTerm(it.term()!!) as Predicate, listOf()))
+//            println("fact: ${it.term().text}")
         }
         ctx?.rule_()?.let { ruleContext ->
             val headTermContext = ruleContext.head().term()
@@ -183,6 +184,7 @@ class Parser : prologBaseListener() {
             bodies.forEach() {
                 result.add(Clause(head as? Predicate ?: atomToZeroTermPredicate(head as Atom), it))
             }
+//            println("rule: ${ruleContext.head().term().text} :- ${ruleContext.body().text}")
         }
     }
 
