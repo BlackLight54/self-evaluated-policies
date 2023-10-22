@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main
+      - circom-testing
   pull_request:
     branches:
       - main
+      - circom-testing
 
 jobs:
   build-and-test:
