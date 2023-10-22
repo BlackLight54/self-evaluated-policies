@@ -6,6 +6,7 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker
 import prologBaseListener
 import prologLexer
 import prologParser
+import prologParser.TermlistContext
 
 
 class Parser : prologBaseListener() {
@@ -110,55 +111,34 @@ class Parser : prologBaseListener() {
     }
 
     override fun exitClause(ctx: prologParser.ClauseContext?) {
-
-        if (ctx?.term()?.getChild(1)?.text == ":-") {
-            val headTermNode = ctx.term().getChild(0)
-            val bodyTermNode = ctx.term().getChild(2)
-            var headPredicate = parseTerm(headTermNode!! as prologParser.TermContext)
-            val bodyPredicates = parseListLinkedWithBinaryOperators(bodyTermNode!! as prologParser.TermContext)
-//            println(Clause(headPredicate as Predicate, bodyPredicates.map { it as Predicate }))
+        ctx?.fact()?.let {
+            result.add(Clause(parseTerm(it.term()!!) as Predicate, listOf()))
+        }
+        ctx?.rule_()?.let {
+            val headTermNode = it.head().term()
+            val bodyTermListNodes = it.body().termlist()
+            var headPredicate = parseTerm(headTermNode!!)
             if (headPredicate is Atom) {
-                // if head is an atom, then it must be a predicate with zero terms, e.g. true/0
+                // if head is atom, it must be a predicate with zero terms, e.g. true/0
                 headPredicate = atomToPredicate(headPredicate)
             }
-            result.add(Clause(headPredicate as Predicate, bodyPredicates.map {
-                when (it) {
-                    // if an element of body is atom, it must be a predicate with zero terms, e.g. true/0
-                    is Atom -> atomToPredicate(it)
-                    else -> it as Predicate
+            val bodies = MutableList(bodyTermListNodes.size) { mutableListOf<Predicate>() }
+            bodyTermListNodes.forEachIndexed { index, bodyTermListNode ->
+                val bodyPredicates = bodies[index]
+                parseTermList(bodyTermListNode).forEach { term ->
+                    if (term is Atom) {
+                        // if an element of body is atom, it must be a predicate with zero terms, e.g. true/0
+                        bodyPredicates.add(atomToPredicate(term))
+                    } else
+                    bodyPredicates.add(term as Predicate)
                 }
-            }))
-
-        } else {
-//            println(parseTerm(ctx?.term()!!))
-            result.add(Clause(parseTerm(ctx!!.term()!!) as Predicate, listOf()))
+            }
+            bodies.forEach() {
+                result.add(Clause(headPredicate as Predicate, it))
+            }
         }
     }
 
-
-
-
-    private fun parseListLinkedWithBinaryOperators(list: prologParser.TermContext): List<Term> {
-        val result = mutableListOf<Term>()
-//        println("term: ${list.text}")
-//        list.children.map {
-//            if (it is prologParser.TermContext) {
-//                     println("checkedterm: ${it.text}")
-//                 if (it.parent.getChild(1)?.text == ",") {
-//                    result.add(parseTerm(it))
-//                }
-//            }
-//        }
-//        println("result: $result")
-        if (list.childCount == 1) {
-            result.add(parseTerm(list))
-        } else if (list.getChild(1)?.text == ",") {
-            result.add(parseTerm(list.getChild(0) as prologParser.TermContext))
-            result.addAll(parseListLinkedWithBinaryOperators(list.getChild(2) as prologParser.TermContext))
-        } else result.add(parseTerm(list))
-//            throw Exception(list.text)
-        return result
-    }
 
     private fun parseUnaryOperator(ctx: prologParser.TermContext): Predicate {
         val terms = mutableListOf<Term>()
@@ -184,8 +164,10 @@ class Parser : prologBaseListener() {
     }
 
     private fun parseTermList(termListCtx: prologParser.TermlistContext): List<Term> {
-        val childTerm = termListCtx.getChild(0)
-        return parseListLinkedWithBinaryOperators(childTerm as prologParser.TermContext)
+        return termListCtx.term()?.map {
+            // only parse the ter,. if its not ','
+            if (it.text != ",") parseTerm(it as prologParser.TermContext) else null
+        }!!.filterNotNull()
     }
 
 
@@ -218,12 +200,13 @@ class Parser : prologBaseListener() {
         if (ctx.getChild(2) == null) return Predicate(ctx.getChild(0).text, listOf())
         return Predicate(
             ctx.getChild(0).text,
-            parseListLinkedWithBinaryOperators(ctx.getChild(2) as prologParser.TermContext)
+            listOf(
+                parseTerm(ctx.getChild(2) as prologParser.TermContext)
+            )
         )
     }
 
     private fun parseTerm(ctx: prologParser.TermContext): Term = when {
-//        ctx.getChild(1)?.text == ";" -> parseDisjunction(ctx)
         // parse true, because true/0 is a built-in predicate
         ctx.childCount == 1 && ctx.getChild(0).text == "true" -> Predicate("true", listOf())
         // parse built-in predicates
@@ -239,19 +222,18 @@ class Parser : prologBaseListener() {
         // parse curled terms
         ctx.getChild(0).text == "{" && ctx.getChild(ctx.childCount - 1).text == "}" -> parseCurlyBracedTerm(ctx)
         // parse braced terms
-        ctx.getChild(0).text == "(" && ctx.getChild(2).text == ")" -> parseTerm(ctx.getChild(1) as prologParser.TermContext)
+        ctx.getChild(0).text == "(" && ctx.getChild(2).text == ")" -> parseTermList(ctx.getChild(1) as TermlistContext).let { terms ->
+            if (terms.size == 1) terms.first() else Predicate("()", terms)
+        }
         // parse variables
         ctx.text.first().isUpperCase() || ctx.text.first() == '_' -> Variable(ctx.text)
         ctx.text in zeroTermPedicates -> atomToPredicate(Atom(ctx.text))
         else -> Atom(ctx.text)
     }.also {
-//        if (it.name == ",") throw Exception("Comma in term: ${ctx.text}")
-//        if (it.name  == ";")  throw Exception("Semicolon in term: ${ctx.text}")
+        if (it.name == ",") throw Exception("Comma in term: ${ctx.text}")
+        if (it.name  == ";")  throw Exception("Semicolon in term: ${ctx.text}")
     }
 
-//    private fun parseDisjunction(ctx: prologParser.TermContext): Term {
-//        ctx.ge
-//    }
 
 
 }

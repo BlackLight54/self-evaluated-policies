@@ -39,9 +39,16 @@ p_text: (directive | clause) * EOF ;
 
 directive: ':-' term '.' ; // also 3.58
 
-clause: term '.' ; // also 3.33
+clause
+    : fact
+    | rule_
+    ;
 
+fact: term '.' ;
+rule_: head ':-' body '.';
 
+head: term;
+body: termlist (';' termlist)*;
 // Abstract Syntax (6.3): terms formed from tokens
 
 termlist
@@ -50,11 +57,11 @@ termlist
 
 term
     : VARIABLE          # variable
-    | '(' term ')'      # braced_term
+    | '(' termlist ')'      # braced_term
     | '-'? integer      # integer_term //TODO: negative case should be covered by unary_operator
     | '-'? FLOAT        # float
     // structure / compound term
-    | head=atom '(' body=termlist ')'     # compound_term
+    | atom '(' termlist ')'     # compound_term
     |<assoc=right> term operator_ term        # binary_operator
     | operator_ term             # unary_operator
     | '[' termlist ( '|' term )? ']' # list_term
@@ -68,12 +75,14 @@ term
 //TODO: modifying operator table
 
 operator_
-    : ':-' | '-->'
+    //: ':-' | '-->'
+    : '-->'
     | '?-'
     | 'dynamic' | 'multifile' | 'discontiguous' | 'public' //TODO: move operators used in directives to "built-in" definition of dialect
-    | ';'
+    // | ';'
     | '->'
-    | ','
+    // | ','
+    | 'div'
     | '\\+'
     | '=' | '\\='
     | '==' | '\\==' | '@<' | '@=<' | '@>' | '@>='
