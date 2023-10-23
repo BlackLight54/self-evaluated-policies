@@ -7,6 +7,7 @@ import app.model.ResolutionTree
 import java.io.File
 import java.util.*
 import hu.bme.app.Parser
+
 fun main() {
 
     val prologCode = """
@@ -308,11 +309,15 @@ writeSteps:-
                     rule.body.forEachIndexed { index, predicate ->
                         append(
                             "${prefix}unified_body[${index}][0] == ${
-                                if (Parser.SPECIAL_TERMS.any {
-                                        predicate.name.contains(
-                                            it
-                                        )
-                                    }.not()) predicate.name else mapping[predicate.name]
+                                if (
+                                    Parser.SPECIAL_TERMS.any {
+                                        predicate.name.contains(it)
+                                    }.not() &&
+                                    Parser.OPERATORS.any {
+                                        predicate.name.contains(it)
+                                    }.not()
+                                )
+                                    predicate.name else mapping[predicate.name]
                             }"
                         )
                         prefix = " && "
