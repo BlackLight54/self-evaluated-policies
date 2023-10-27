@@ -278,7 +278,7 @@ class Parser : prologBaseListener() {
             if (terms.size == 1) terms.first() else Predicate("()", terms)
         }
         // parse variables
-        ctx.text.first().isUpperCase() || ctx.text.first() == '_' -> Variable(ctx.text)
+        ctx.text.first().isUpperCase() || ctx.text.first()  == '_' || ctx.text.toIntOrNull() != null -> Variable(ctx.text)
         ctx.text in zeroTermPedicates -> atomToZeroTermPredicate(Atom(ctx.text))
         else -> Atom(ctx.text)
     }.also {

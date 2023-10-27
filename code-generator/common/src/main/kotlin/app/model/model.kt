@@ -34,6 +34,11 @@ class Variable(name: String) : Term(name) {
     override fun toString(): String {
         return "Variable(name='$name')"
     }
+
+    override fun encode(mapping: Map<String, Int>): List<Int> {
+        // Return the int if applicable, otherwise return the string hashcode
+        return listOf(name.toIntOrNull() ?: name.hashCode())
+    }
 }
 
 class Predicate(name: String, val terms: List<Term>) : Term(name){

@@ -18,15 +18,13 @@ data class ResolutionTree(var goal: List<Int>, var unification: List<List<Int>>,
         return max
     }
 
-    fun standardize(branchingFactor_input: Int = 0,maxDepth_input: Int = 0, unificationCount_input: Int = 0): ResolutionTree {
-        val elementCount = getMaxElementCount()
-        val unificationCount = if(unificationCount_input != 0) unificationCount_input else getMaxUnficationCount()
-        val maxDepth = if(maxDepth_input != 0) maxDepth_input else  getMaxDepth()
-        val branchingFactor = if(branchingFactor_input != 0) branchingFactor_input else getMaxChildrenCount()
-        return standardizeBranching(branchingFactor,maxDepth).standardizeElements(elementCount, unificationCount)
+    fun standardize(unificationCount_input: Int = 0, max_elements: Int = 0): ResolutionTree {
+        val elementCount = if (max_elements == 0) getMaxElementCount() else max_elements
+        val unificationCount = if (unificationCount_input != 0) unificationCount_input else getMaxUnficationCount()
+        return standardizeElements(elementCount, unificationCount)
     }
 
-    fun toBFSJson() : String{
+    fun toBFSJson(totalElements: Int = 200): String {
         // Generate a BFS json
         // It should have two fields: goals and unifications
         // goals should be a list of lists
@@ -39,6 +37,7 @@ data class ResolutionTree(var goal: List<Int>, var unification: List<List<Int>>,
         // ... and so on
         val goals = mutableListOf<List<Int>>()
         val unifications = mutableListOf<List<List<Int>>>()
+        val childrenCount = mutableListOf<Int>()
         // Do the BFS
         val queue = mutableListOf<ResolutionTree>()
         queue.add(this)
@@ -46,22 +45,41 @@ data class ResolutionTree(var goal: List<Int>, var unification: List<List<Int>>,
             val current = queue.removeAt(0)
             goals.add(current.goal)
             unifications.add(current.unification)
+            childrenCount.add(current.children.size)
             queue.addAll(current.children)
         }
+
+        while (goals.size < totalElements) {
+            goals.add(IntArray(goals[0].size) { 0 }.toList())
+            childrenCount.add(0)
+            val mutableList = mutableListOf<List<Int>>()
+            for (i in 0 until unifications[0].size) {
+                mutableList.add(IntArray(unifications[0][i].size) { 0 }.toList())
+            }
+            unifications.add(mutableList)
+        }
+
         val json = JSONObject()
-        json.put("goals",goals)
-        json.put("unifiedBodies",unifications)
+        json.put("goals", goals)
+        json.put("unifiedBodies", unifications)
+        json.put("childCountArray", childrenCount)
         return json.toString()
     }
 
-    private fun standardizeBranching(branchingFactor: Int,maxDepth :Int, depth : Int = 1): ResolutionTree {
+    private fun standardizeBranching(branchingFactor: Int, maxDepth: Int, depth: Int = 1): ResolutionTree {
         // If we are at the max depth, we don't need to do anything
         if (depth == maxDepth) return this
 
         val newChildren = mutableListOf<ResolutionTree>()
-        children.forEach { newChildren.add(it.standardizeBranching(branchingFactor,maxDepth,depth+1)) }
+        children.forEach { newChildren.add(it.standardizeBranching(branchingFactor, maxDepth, depth + 1)) }
         while (newChildren.size < branchingFactor) {
-            newChildren.add(ResolutionTree(listOf(), listOf(), listOf()).standardizeBranching(branchingFactor,maxDepth,depth+1))
+            newChildren.add(
+                ResolutionTree(listOf(), listOf(), listOf()).standardizeBranching(
+                    branchingFactor,
+                    maxDepth,
+                    depth + 1
+                )
+            )
         }
         return ResolutionTree(goal, unification, newChildren)
     }
@@ -83,11 +101,11 @@ data class ResolutionTree(var goal: List<Int>, var unification: List<List<Int>>,
             }
         }
         val newChildren = mutableListOf<ResolutionTree>()
-        children.forEach { newChildren.add(it.standardizeElements(elementCount,unificationCount)) }
+        children.forEach { newChildren.add(it.standardizeElements(elementCount, unificationCount)) }
         return ResolutionTree(newGoal, newUnification, newChildren)
     }
 
-    fun getMaxDepth() : Int {
+    fun getMaxDepth(): Int {
         if (children.isEmpty()) return 1
         var max = 0
         for (child in children) {
@@ -101,7 +119,7 @@ data class ResolutionTree(var goal: List<Int>, var unification: List<List<Int>>,
 
     fun getMaxElementCount(): Int {
         val goalCount = goal.size
-        val unificationCount = if(unification.isNotEmpty()) unification.maxOf { it.size } else 0
+        val unificationCount = if (unification.isNotEmpty()) unification.maxOf { it.size } else 0
         val maxHere = if (goalCount > unificationCount) goalCount else unificationCount
         if (children.isEmpty()) return maxHere
         var max = maxHere
@@ -114,7 +132,7 @@ data class ResolutionTree(var goal: List<Int>, var unification: List<List<Int>>,
         return max
     }
 
-    fun getMaxUnficationCount():Int {
+    fun getMaxUnficationCount(): Int {
         var max = unification.size
         if (children.isEmpty()) return max
         children.forEach {
@@ -134,10 +152,14 @@ data class ResolutionTree(var goal: List<Int>, var unification: List<List<Int>>,
                 JSONObject("{}")
             }
             if (jsonObject.has("goal")) {
-                val goal = Parser.parsePredicate(jsonObject.getString("goal")).encode(mapping)
-                val unification = jsonObject.getJSONObject("unification").getJSONArray("body").map { Parser.parsePredicate(it.toString()).encode(mapping) }
+                val goal = Parser.parseProlog(jsonObject.getString("goal") + ".")[0].head
+
+                val unification = if ((jsonObject.getJSONObject("unification")
+                        .get("body") is String).not()
+                ) jsonObject.getJSONObject("unification").getJSONArray("body")
+                    .map { Parser.parsePredicate(it.toString()).encode(mapping) } else listOf<List<Int>>()
                 val children = jsonObject.getJSONArray("ztree").map { parseJson(it.toString(), mapping) }
-                return ResolutionTree(goal, unification, children)
+                return ResolutionTree(goal.encode(mapping), unification, children)
             } else {
                 // Its a leaf, i.e. either true or false
                 val goal = listOf(mapping[json]!!)

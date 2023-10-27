@@ -8,7 +8,11 @@ fun createMapping(clauses: List<Clause>) :Map<String,Int>{
     val mapping = mutableMapOf<String, Int>()
     knowledgeBase.forEach { clause ->
         clause.head.terms.forEach { term ->
-            if (!mapping.contains(term.name)) {
+            val trimmed = term.name.trim { it == '\'' }
+            if(trimmed == term.name) {
+                mapping[term.name] = counter++
+            } else {
+                mapping[trimmed] = counter
                 mapping[term.name] = counter++
             }
         }
@@ -64,7 +68,13 @@ private fun predicateAtomMapping(predicate: Predicate, mapping: MutableMap<Strin
 
     predicate.terms.forEach { term ->
         if (!mapping.contains(term.name) && term is Atom) {
-            mapping[term.name] = counter++
+            val trimmed = term.name.trim { it == '\'' }
+            if(trimmed == term.name) {
+                mapping[term.name] = counter++
+            } else {
+                mapping[trimmed] = counter
+                mapping[term.name] = counter++
+            }
         }
     }
 

@@ -8,6 +8,8 @@ import java.io.File
 import java.util.*
 import hu.bme.app.Parser
 
+const val maxPredicateSize = 15;
+
 fun main() {
 
     val prologCode = """
@@ -142,7 +144,7 @@ endPrice(Price):-
 
 inputPriceOk:-
     endPrice(Price),
-    inputPrice(Price).
+    inputPayment(Price).
 
 writeSteps:-
     monthlyConsumptions(MonthlyConsumptions),
@@ -184,6 +186,7 @@ writeSteps:-
         }
     }
     val generated_rule_code = StringBuilder()
+    val maxPerdicateLength = rules.maxOf { it.value[0].body.maxOf { it.terms.size } } + 1
     rules.forEach { (name, rule_clauses) ->
         // Find matching terms in the body and the head of the rules
         // For example, if we have the following rule:
@@ -274,12 +277,14 @@ writeSteps:-
             println(allConstraints.joinToString(" && "))
             constraints.add(allConstraints.joinToString(" && "))
         }
+
+        val maxUniBody = rule_clauses.maxOf { it.body.size }
         generated_rule_code.appendLine(
             buildString {
                 appendLine("template Goal${name.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }}() {")
                 appendLine(
-                    "\tsignal input unified_body[${rule_clauses[0].body.size}][3];\n" +
-                            "\tsignal input goal_args[3];\n" +
+                    "\tsignal input unified_body[${maxUniBody}][$maxPredicateSize];\n" +
+                            "\tsignal input goal_args[$maxPredicateSize];\n" +
                             "\tsignal output c;\n" +
                             "\tvar result = 0;\n" +
                             "\tvar none = 0;"
@@ -322,9 +327,9 @@ writeSteps:-
                         )
                         prefix = " && "
                     }
-                    for (i in rule.body.size until rules.maxOf { it.value.size }) {
+                    /*for (i in rule.body.size until rules.maxOf { it.value.size }) {
                         append("${prefix}unified_body[${i}][0] == none")
-                    }
+                    }*/
                     appendLine(" ) {")
                     val knowledgeBody =
                         knowledgeBase.groupBy { it.head.name }.count { rule.body.map { it.name }.contains(it.key) }
@@ -386,9 +391,10 @@ writeSteps:-
         var knowledgeUsageCounter = 0
         var rule_prefix = "\t"
         rules.forEach { (name, rule_clauses) ->
+            val maxUniBody = rule_clauses.maxOf { it.body.size }
             appendLine("${rule_prefix}if(goal_args[0] == ${name}) {")
             appendLine("\t\t${name}Goal.goal_args <-- goal_args;")
-            for (i in 0..<rule_clauses[0].body.size) {
+            for (i in 0..< maxUniBody) {
                 appendLine("\t\t${name}Goal.unified_body[${i}] <-- unified_body[${i}];")
             }
             appendLine("\t\tresult = ${name}Goal.c;")
@@ -414,14 +420,29 @@ writeSteps:-
             rule_prefix = " else "
         }
     }
+    val branchingFactor = 13 // rules.maxOf { it.value[0].body.size }
+
 
     val transition_constraints = buildString {
         clauses.groupBy { it.head.name }.forEach { (name, _) ->
+            var prefix = ""
+            val prevBodyChecks = buildString {
+                for (i in 0 until branchingFactor) {
+                    appendLine("${prefix}prevUnifiedBodies[$i][0] == $name")
+                    prefix = " || "
+                }
+            }
             appendLine(
-                "\tif(currentGoal[0] == $name && (prevUnifiedBodies[0][0] == $name || prevUnifiedBodies[1][0] == $name)) {\n" +
+                "\tif(currentGoal[0] == $name) {\n" +
                         "      var has_match = 0;\n" +
-                        "      for(var i = 0; i < 2; i++) {\n" +
-                        "         if(prevUnifiedBodies[i][1] == currentGoal[1] && prevUnifiedBodies[i][2] == currentGoal[2]) {\n" +
+                        "      for(var i = 0; i < $branchingFactor; i++) {\n" +
+                        "         var so_far_so_good = 1;" +
+                        "         for(var j = 0; j < $maxPredicateSize; j++) {\n" +
+                        "            if(prevUnifiedBodies[i][j] != currentGoal[j] && prevUnifiedBodies[i][2] == currentGoal[2]) {\n" +
+                        "               so_far_so_good = 0;\n" +
+                        "            }\n" +
+                        "         }\n" +
+                        "         if(so_far_so_good) {\n" +
                         "            has_match = 1;\n" +
                         "         }\n" +
                         "      }\n" +
@@ -434,14 +455,15 @@ writeSteps:-
     }
 
     val maxDepth = 4;
-    val branchingFactor = rules.maxOf { it.value[0].body.size }
+
 
     val template = File("template.circom").readText()
+
     // Padded knowledge base. Each element in the knowledge base shall have a uniform length
     // Specifically, the length of the element with the longest length
     val knowLedgeBasePadded = knowledgeBase.map { clause ->
         val padded = clause.head.encode(mapping).toMutableList()
-        while (padded.size < knowledgeBase.maxOf { it.head.encode(mapping).size }) {
+        while (padded.size < maxPredicateSize) {
             padded.add(0)
         }
         padded
@@ -456,12 +478,21 @@ writeSteps:-
         .replace("REPLACE_TRANSITION_RULES", transition_constraints)
         .replace("REPLACE_MAX_DEPTH", maxDepth.toString())
         .replace("REPLACE_BRANCH_FACTOR", branchingFactor.toString())
+        .replace("MAX_BODY_SIZE","$maxPredicateSize")
+        .replace("SUCH_EMPTY",IntArray(maxPredicateSize).joinToString(","){"0"})
 
     File("generated.circom").writeText(generatedCode)
 
     mapping.forEach { (name, index) ->
         println("'$name': $index,")
     }
+
+    val treeJsonText = File("tree.json").readText()
+    var tree = ResolutionTree.parseJson(treeJsonText,mapping)
+    val maxUniBody = rules.maxOf { it.value.maxOf { it.body.size } }
+    println(tree.getMaxDepth())
+    tree = tree.standardize(unificationCount_input = 13, max_elements = maxPredicateSize);
+    File("input_tree.json").writeText(tree.toBFSJson())
 }
 
 

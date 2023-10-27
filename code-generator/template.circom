@@ -2,11 +2,11 @@ pragma circom 2.0.0;
 
 template TreeNode(branchFactor) {
    // Each node's data
-   signal input goal[3];
-   signal input unified_body[branchFactor][3];
+   signal input goal[MAX_BODY_SIZE];
+   signal input unified_body[branchFactor][MAX_BODY_SIZE];
 
     // If it's not a leaf, we connect the children
-   signal input children_goals[branchFactor][3];
+   signal input children_goals[branchFactor][MAX_BODY_SIZE];
    signal output c;
     
    component transitiontochild[branchFactor];
@@ -18,7 +18,6 @@ template TreeNode(branchFactor) {
       transitiontochild[i].currentGoal <-- children_goals[i];
       result = result && transitiontochild[i].transition_okay;
    }
-	//if(goal[0] == 0 && (children_goals[0][0] != 0 || children_goals[1][0] != 0)) {
 	if(goal[0] == 0) {
 		for(var i = 0; i < branchFactor; i++) {
 			if(children_goals[i][0] != 0){
@@ -38,37 +37,54 @@ template TreeNode(branchFactor) {
 }
 
 template PrologResolutionTree(depth, branchFactor) {
-    // Calculate total nodes using geometric series sum formula
-    var totalNodes = (branchFactor**(depth) - 1) / (branchFactor - 1);
+    // Define the maximum number of tree nodes
+    var totalNodes = 200;
 
     // Define the tree structure
-    signal input goals[totalNodes][3];
-    signal input unifiedBodies[totalNodes][branchFactor][3]; 
+    signal input goals[totalNodes][MAX_BODY_SIZE];
+    signal input unifiedBodies[totalNodes][branchFactor][MAX_BODY_SIZE]; 
+    signal input childCountArray[totalNodes]; // This is the number of children each node has
+
     signal output c;
     component nodes[totalNodes];
     for(var i = 0; i < totalNodes; i++) {
         nodes[i] = TreeNode(branchFactor);
     }
     
-    
+    // Traverse the tree
+    var currentIndex = 0; // Start from the root
+    for(var i = 0; i < totalNodes; i++) {
+        // Assign node values here
+        // For example: nodes[i].goal <== goals[currentIndex];
 
-    for(var i = 0; i < totalNodes; i++){
-         nodes[i].goal <-- goals[i];
-         nodes[i].unified_body <-- unifiedBodies[i];
+        // Get number of children for the current node
+        var numChildren = childCountArray[i];
+        nodes[i].goal <-- goals[i];
+        nodes[i].unified_body <-- unifiedBodies[i];
 
+		var sum = 0;
+		for(var j = 0; j < i;j++) {
+			sum += childCountArray[j];
+		}
+        // Traverse through children
         for(var j = 0; j < branchFactor; j++) {
-         var childGoalIndex = i * branchFactor + j+1;
-      	if(childGoalIndex < totalNodes) {
-         	nodes[i].children_goals[j] <-- goals[childGoalIndex];
-         } else {
-            nodes[i].children_goals[j] <-- [0,0,0];
-         }
+         var childGoal[MAX_BODY_SIZE];
+			var childIndex = sum + j + 1;
+			if(j < numChildren && childIndex < totalNodes) {
+				childGoal = goals[childIndex];
+			} else {
+            	childGoal = [SUCH_EMPTY];
+			}
+            nodes[i].children_goals[j] <-- childGoal;
         }
     }
+
+
 }
+
 template TransitionLogic() {
-   signal input prevUnifiedBodies[REPLACE_BRANCH_FACTOR][3];
-   signal input currentGoal[3];
+   signal input prevUnifiedBodies[REPLACE_BRANCH_FACTOR][MAX_BODY_SIZE];
+   signal input currentGoal[MAX_BODY_SIZE];
    signal output transition_okay;
 
 REPLACE_PREDICATE_MAPPINGS
@@ -92,8 +108,8 @@ REPLACE_TRANSITION_RULES
 
 
 template CheckNode(){
-   signal input unified_body[REPLACE_BRANCH_FACTOR][3];
-   signal input goal_args[3];
+   signal input unified_body[REPLACE_BRANCH_FACTOR][MAX_BODY_SIZE];
+   signal input goal_args[MAX_BODY_SIZE];
    signal output c;
 REPLACE_PREDICATE_MAPPINGS
    var none = 0;
@@ -113,10 +129,10 @@ REPLACE_RULE_TEMPLATES
 
 template KnowledgeChecker() {
    
-   signal input a[3];
+   signal input a[MAX_BODY_SIZE];
    signal output c;
    var len = REPLACE_KNOWLEDGE_BASE_LEN;
-   var knowledgeBase[len][3] = [REPLACE_KNOWLEDGE_BASE_ARRAY];
+   var knowledgeBase[len][MAX_BODY_SIZE] = [REPLACE_KNOWLEDGE_BASE_ARRAY];
    var result = 0;
    if(a[0] == 0 && a[1] == 0 && a[2] == 0) {
       result = 1;
