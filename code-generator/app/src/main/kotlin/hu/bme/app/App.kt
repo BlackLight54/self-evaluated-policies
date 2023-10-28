@@ -185,6 +185,11 @@ writeSteps:-
             )
         }
     }
+
+    val bucketVariables = findArrayPredicateVariables(rules)
+    val maxBucketElementSize = findArrayTermMaxSize(rules)
+    println("Bucket max size: $maxBucketElementSize")
+
     val generated_rule_code = StringBuilder()
     val maxPerdicateLength = rules.maxOf { it.value[0].body.maxOf { it.terms.size } } + 1
     rules.forEach { (name, rule_clauses) ->
@@ -283,8 +288,8 @@ writeSteps:-
             buildString {
                 appendLine("template Goal${name.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }}() {")
                 appendLine(
-                    "\tsignal input unified_body[${maxUniBody}][$maxPredicateSize];\n" +
-                            "\tsignal input goal_args[$maxPredicateSize];\n" +
+                    "\tsignal input unified_body[${maxUniBody}][$maxPerdicateLength];\n" +
+                            "\tsignal input goal_args[$maxPerdicateLength];\n" +
                             "\tsignal output c;\n" +
                             "\tvar result = 0;\n" +
                             "\tvar none = 0;"
@@ -322,7 +327,7 @@ writeSteps:-
                                         predicate.name.contains(it)
                                     }.not()
                                 )
-                                    predicate.name else mapping[predicate.name]
+                                    predicate.name else if (predicate.name == "=") mapping["true"] else mapping[predicate.name]
                             }"
                         )
                         prefix = " && "
@@ -345,6 +350,8 @@ writeSteps:-
                                 knowledgeUsageCounter++
                             }
                         }
+                    } else if(rule.body[0].name == "=") {
+                        appendLine("\t\tresult = 1;")
                     } else {
                         appendLine("\t\tif ( ${constraints[ind]} ) {")
                         appendLine("\t\t\tresult = 1;")
@@ -420,37 +427,48 @@ writeSteps:-
             rule_prefix = " else "
         }
     }
-    val branchingFactor = 13 // rules.maxOf { it.value[0].body.size }
+    val branchingFactor = 13//rules.maxOf { it.value[0].body.size }
 
 
     val transition_constraints = buildString {
-        clauses.groupBy { it.head.name }.forEach { (name, _) ->
+        clauses.groupBy { it.head.name }.forEach { (name, clauses) ->
+
             var prefix = ""
             val prevBodyChecks = buildString {
-                for (i in 0 until branchingFactor) {
-                    appendLine("${prefix}prevUnifiedBodies[$i][0] == $name")
-                    prefix = " || "
-                }
+               clauses.forEach { clause ->
+                   var innerPrefix = ""
+                   append(prefix)
+                   clause.body.forEachIndexed { index, predicate ->
+                       append("${innerPrefix}prevUnifiedBodies[${index}][0] == ${
+                           if (
+                               Parser.SPECIAL_TERMS.any {
+                                   predicate.name.contains(it)
+                               }.not() &&
+                               Parser.OPERATORS.any {
+                                   predicate.name.contains(it)
+                               }.not()
+                           )
+                               predicate.name else if (predicate.name == "=") mapping["true"] else mapping[predicate.name]
+                       }")
+                       innerPrefix = " && "
+                   }
+                   if(clause.body.isEmpty())
+                       innerPrefix = ""
+                   for (i in clause.body.size until branchingFactor) {
+                       append("${innerPrefix}prevUnifiedBodies[${i}][0] == 0")
+                       innerPrefix = " && "
+                   }
+                   prefix = " || "
+               }
             }
             appendLine(
-                "\tif(currentGoal[0] == $name) {\n" +
-                        "      var has_match = 0;\n" +
-                        "      for(var i = 0; i < $branchingFactor; i++) {\n" +
-                        "         var so_far_so_good = 1;" +
-                        "         for(var j = 0; j < $maxPredicateSize; j++) {\n" +
-                        "            if(prevUnifiedBodies[i][j] != currentGoal[j] && prevUnifiedBodies[i][2] == currentGoal[2]) {\n" +
-                        "               so_far_so_good = 0;\n" +
-                        "            }\n" +
-                        "         }\n" +
-                        "         if(so_far_so_good) {\n" +
-                        "            has_match = 1;\n" +
-                        "         }\n" +
-                        "      }\n" +
-                        "      if(has_match){\n" +
-                        "         result = 1;\n" +
-                        "      }\n" +
-                        "   }"
+                "\tif(currentGoal[0] == $name) {\n"
+                        + "\t\tif ( $prevBodyChecks ) {\n"
+                        + "\t\t\tresult = 1;\n"
+                        + "\t\t}\n"
+                        + "\t}"
             )
+
         }
     }
 
@@ -463,11 +481,14 @@ writeSteps:-
     // Specifically, the length of the element with the longest length
     val knowLedgeBasePadded = knowledgeBase.map { clause ->
         val padded = clause.head.encode(mapping).toMutableList()
-        while (padded.size < maxPredicateSize) {
+        while (padded.size < maxPerdicateLength) {
             padded.add(0)
         }
         padded
     }
+
+    val bucketSize : Int = bucketVariables.values.sum()
+
 
     val generatedCode = template
         .replace("REPLACE_RULE_TEMPLATES", generated_rule_code.toString())
@@ -478,8 +499,10 @@ writeSteps:-
         .replace("REPLACE_TRANSITION_RULES", transition_constraints)
         .replace("REPLACE_MAX_DEPTH", maxDepth.toString())
         .replace("REPLACE_BRANCH_FACTOR", branchingFactor.toString())
-        .replace("MAX_BODY_SIZE","$maxPredicateSize")
-        .replace("SUCH_EMPTY",IntArray(maxPredicateSize).joinToString(","){"0"})
+        .replace("MAX_BODY_SIZE","$maxPerdicateLength")
+        .replace("SUCH_EMPTY",IntArray(maxPerdicateLength).joinToString(","){"0"})
+        .replace("MAX_BUCKET_SIZE", bucketSize.toString())
+        .replace("MAX_BUCKET_ELEMENT_SIZE", maxBucketElementSize.toString())
 
     File("generated.circom").writeText(generatedCode)
 
@@ -487,13 +510,88 @@ writeSteps:-
         println("'$name': $index,")
     }
 
+
     val treeJsonText = File("tree.json").readText()
     var tree = ResolutionTree.parseJson(treeJsonText,mapping)
     val maxUniBody = rules.maxOf { it.value.maxOf { it.body.size } }
-    println(tree.getMaxDepth())
-    tree = tree.standardize(unificationCount_input = 13, max_elements = maxPredicateSize);
-    File("input_tree.json").writeText(tree.toBFSJson())
+    //println(tree.getMaxDepth())
+    tree = tree.standardize(unificationCount_input = branchingFactor, max_elements = maxPerdicateLength);
+    File("input_tree.json").writeText(tree.toBFSJson(bucketSize = bucketSize))
 }
 
+/**
+ * List the Array type terms in the prolog program
+ * @param rules The clauses of the prolog program in a map, where the key is the name of the predicate, and the value is a list of clauses
+ * @return The names of the variables that are arrays
+ */
+fun findArrayPredicateVariables(rules: Map<String, List<Clause>>) : Map<String,Int> {
+    // List the arrays (predicates that's name is [] ) and print them
+    // We need to find them recursively, because they can be nested in other predicates
+    // If we find an array, save the name of its parent predicate
+    val arrays = mutableMapOf<String,Int>()
+    fun findArrays(predicate: Predicate, parent: Predicate? = null) {
+        if (predicate.name == "[]") {
+            arrays[parent!!.terms[0].name ?: "root"] = predicate.terms.size
+        } else {
+            predicate.terms.forEach { term ->
+                if (term is Predicate) {
+                    findArrays(term, predicate)
+                }
+            }
+        }
+    }
+    rules.forEach { (name, rules) ->
+        rules.forEach { rule ->
+            rule.body.forEach { predicate ->
+                findArrays(predicate)
+            }
+        }
+    }
+
+    return arrays.toMap()
+}
+
+/**
+ * Find the maximum size of the arrays in the prolog program
+ * @param rules The clauses of the prolog program in a map, where the key is the name of the predicate, and the value is a list of clauses
+ * @return The maximum size of the arrays
+ */
+fun findArrayTermMaxSize(rules: Map<String, List<Clause>>) : Int {
+    // Find the maximum size of the arrays
+    // We need to find them recursively, because they can be nested in other predicates
+    // We first need to find the array predicate (predicate with name [])
+    // Then we need to find the size of the array by recursively counting the number of elements in the array
+    // Then we need to find the maximum size of the arrays
+
+
+    val arraysSizes = mutableSetOf<Int>()
+
+    fun findArraySize(predicate: Predicate) : Int {
+        if (predicate.terms.isEmpty()) {
+            return 1
+        } else if(predicate.name == "[]") {
+
+            return predicate.terms.size + 1
+        } else {
+            var size = 0
+            predicate.terms.forEach { term ->
+                if (term is Predicate) {
+                    size += findArraySize(term)
+                }
+            }
+            return size
+        }
+    }
+
+    rules.forEach { (name, rules) ->
+        rules.forEach { rule ->
+            rule.body.forEach { predicate ->
+                arraysSizes.add(findArraySize(predicate))
+            }
+        }
+    }
+
+    return arraysSizes.maxOrNull()!!
+}
 
 

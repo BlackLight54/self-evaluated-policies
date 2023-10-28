@@ -1,10 +1,14 @@
 package app.model
 
+import hu.bme.app.Atom
 import hu.bme.app.Parser
+import hu.bme.app.Predicate
+import hu.bme.app.Term
 import org.json.JSONException
 import org.json.JSONObject
 
 data class ResolutionTree(var goal: List<Int>, var unification: List<List<Int>>, val children: List<ResolutionTree>) {
+
 
     fun getMaxChildrenCount(): Int {
         if (children.isEmpty()) return 0
@@ -24,7 +28,7 @@ data class ResolutionTree(var goal: List<Int>, var unification: List<List<Int>>,
         return standardizeElements(elementCount, unificationCount)
     }
 
-    fun toBFSJson(totalElements: Int = 200): String {
+    fun toBFSJson(totalElements: Int = 200,bucketSize : Int = 10): String {
         // Generate a BFS json
         // It should have two fields: goals and unifications
         // goals should be a list of lists
@@ -38,6 +42,7 @@ data class ResolutionTree(var goal: List<Int>, var unification: List<List<Int>>,
         val goals = mutableListOf<List<Int>>()
         val unifications = mutableListOf<List<List<Int>>>()
         val childrenCount = mutableListOf<Int>()
+
         // Do the BFS
         val queue = mutableListOf<ResolutionTree>()
         queue.add(this)
@@ -63,6 +68,7 @@ data class ResolutionTree(var goal: List<Int>, var unification: List<List<Int>>,
         json.put("goals", goals)
         json.put("unifiedBodies", unifications)
         json.put("childCountArray", childrenCount)
+        json.put("bucket", bucket.balanceBucket(bucketSize).values )
         return json.toString()
     }
 
@@ -96,6 +102,10 @@ data class ResolutionTree(var goal: List<Int>, var unification: List<List<Int>>,
             newUnification.add(mutableListOf())
         }
         newUnification.forEach {
+            if(it.size > elementCount) {
+                println("Warning: unification size is larger than element count")
+                println("Unification: $it")
+            }
             while (it.size < elementCount) {
                 it.add(0)
             }
@@ -145,6 +155,8 @@ data class ResolutionTree(var goal: List<Int>, var unification: List<List<Int>>,
     }
 
     companion object {
+        private val bucket = Bucket()
+
         fun parseJson(json: String, mapping: Map<String, Int>): ResolutionTree {
             val jsonObject = try {
                 JSONObject(json)
@@ -153,13 +165,17 @@ data class ResolutionTree(var goal: List<Int>, var unification: List<List<Int>>,
             }
             if (jsonObject.has("goal")) {
                 val goal = Parser.parseProlog(jsonObject.getString("goal") + ".")[0].head
+                val encodedGoal = refactorPredicateMapping(goal, mapping)
 
                 val unification = if ((jsonObject.getJSONObject("unification")
                         .get("body") is String).not()
                 ) jsonObject.getJSONObject("unification").getJSONArray("body")
-                    .map { Parser.parsePredicate(it.toString()).encode(mapping) } else listOf<List<Int>>()
+                    .map {
+                        val predicate = Parser.parsePredicate(it.toString())
+                        refactorPredicateMapping(predicate, mapping)
+                    } else listOf<List<Int>>()
                 val children = jsonObject.getJSONArray("ztree").map { parseJson(it.toString(), mapping) }
-                return ResolutionTree(goal.encode(mapping), unification, children)
+                return ResolutionTree(encodedGoal, unification, children)
             } else {
                 // Its a leaf, i.e. either true or false
                 val goal = listOf(mapping[json]!!)
@@ -167,6 +183,101 @@ data class ResolutionTree(var goal: List<Int>, var unification: List<List<Int>>,
                 val children = listOf<ResolutionTree>()
                 return ResolutionTree(goal, unification, children)
             }
+        }
+
+        private fun refactorPredicateMapping(predicate: Predicate, mapping: Map<String, Int>): List<Int> {
+
+            return if (predicate.hasArray()) {
+                removeArraysFromPredicateAndAddThemToTheBucket(predicate, mapping, bucket)
+            } else if (predicate.name == "is") {
+                removeISpredicateEmbeddedPredicateNames(predicate, mapping).encode(mapping)
+            } else {
+                predicate.encode(mapping)
+            }
+        }
+
+        /**
+         * This function takes a predicate as an input and returns a mapping for it. It also takes a bucket as an input which this function will modify.
+         * The function will remove the arrays from the predicate and add them to the bucket if they are not already there. The bucket stores the
+         * mapping for the arrays. The encoded predicate will not contain the arrays anymore, but instead it will contain the index of the array in the bucket.
+         * @param predicate The predicate to be encoded
+         * @param mapping The mapping symbol table for the prolog program
+         * @param bucket The bucket to which the arrays should be added
+         * @return The encoded predicate with the arrays removed and replaced with their index in the bucketMapping
+         */
+        private fun removeArraysFromPredicateAndAddThemToTheBucket(
+            predicate: Predicate,
+            mapping: Map<String, Int>,
+            bucket: Bucket
+        ): List<Int> {
+
+            val newTerms = mutableListOf<Term>()
+            val mappingCopy = mapping.toMutableMap()
+            val maxMap = mappingCopy.values.max()
+            predicate.terms.forEach { term ->
+                if (term is Predicate && term.name == "[]") {
+
+                    if (!bucket.predicates.contains(term)) {
+                        bucket.predicates.add(term)
+                        bucket.values.add(term.encode(mapping))
+                    }
+                    val index = maxMap + bucket.predicates.indexOf(term) + 1
+                    mappingCopy["[$index]"] = index
+                    newTerms.add(Atom("[$index]"))
+                } else {
+                    newTerms.add(term)
+                }
+            }
+            val resultPredicate = Predicate(predicate.name, newTerms)
+            return resultPredicate.encode(mappingCopy)
+        }
+
+
+        /**
+         * This function will return a modified version of the input predicate. The input predicate should not contain any other predicates.
+         * The returned predicate will not contain any predicates, but it will contain the terms of the embedded predicates.
+         * @param predicate The predicate to be modified
+         * @param mapping The mapping symbol table for the prolog program
+         * @return The modified predicate
+         */
+        private fun removeISpredicateEmbeddedPredicateNames(
+            predicate: Predicate,
+            mapping: Map<String, Int>
+        ): Predicate {
+            val newTerms = mutableListOf<Term>()
+            val mappingCopy = mapping.toMutableMap()
+            val maxMap = mappingCopy.values.max()
+            predicate.terms.forEach { term ->
+                if (term is Predicate) {
+                    newTerms.addAll(removeISpredicateEmbeddedPredicateNames(term, mapping).terms)
+                } else {
+                    newTerms.add(term)
+                }
+            }
+            return Predicate(predicate.name, newTerms)
+        }
+    }
+
+    private data class Bucket(val predicates: MutableList<Predicate> = mutableListOf(), val values: MutableList<List<Int>> = mutableListOf()) {
+
+        fun balanceBucket(elementCount: Int) :Bucket{
+
+            while (predicates.size < elementCount) {
+                predicates.add(Predicate("[]", listOf()))
+                values.add(listOf())
+            }
+            // Make sure that each element in the bucket has the same size
+            val maxSize = values.maxOf { it.size }
+            val newValues = values.toMutableList()
+            for (i in 0 until values.size) {
+                val value = values[i].toMutableList()
+                while (value.size < maxSize) {
+                    value.add(0)
+                }
+                newValues[i] = value
+            }
+
+            return Bucket(predicates, newValues)
         }
     }
 

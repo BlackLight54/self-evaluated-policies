@@ -44,6 +44,7 @@ template PrologResolutionTree(depth, branchFactor) {
     signal input goals[totalNodes][MAX_BODY_SIZE];
     signal input unifiedBodies[totalNodes][branchFactor][MAX_BODY_SIZE]; 
     signal input childCountArray[totalNodes]; // This is the number of children each node has
+    signal input bucket[MAX_BUCKET_SIZE][MAX_BUCKET_ELEMENT_SIZE];
 
     signal output c;
     component nodes[totalNodes];
@@ -90,7 +91,22 @@ template TransitionLogic() {
 REPLACE_PREDICATE_MAPPINGS
    var result = 0;
 
-REPLACE_TRANSITION_RULES
+   var has_match = 0;
+   for(var i = 0; i < REPLACE_BRANCH_FACTOR; i++) {
+      var so_far_so_good = 1;
+      for(var j = 0; j < MAX_BODY_SIZE; j++) {
+         if(prevUnifiedBodies[i][j] != currentGoal[j]) {
+            so_far_so_good = 0;
+         }
+      }
+      if(so_far_so_good) {
+         has_match = 1;
+      }
+   }
+   if(!has_match){
+      result = 0;
+   }
+
    if((prevUnifiedBodies[0][0] == true && prevUnifiedBodies[0][1] == 0) || currentGoal[0] == true) {
        result = 1;
    }

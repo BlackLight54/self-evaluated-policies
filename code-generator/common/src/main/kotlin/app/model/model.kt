@@ -30,6 +30,7 @@ class Atom(name: String) : Term(name) {
         return "Atom(name='$name')"
     }
 }
+
 class Variable(name: String) : Term(name) {
     override fun toString(): String {
         return "Variable(name='$name')"
@@ -41,7 +42,7 @@ class Variable(name: String) : Term(name) {
     }
 }
 
-class Predicate(name: String, val terms: List<Term>) : Term(name){
+class Predicate(name: String, val terms: List<Term>) : Term(name) {
     override fun encode(mapping: Map<String, Int>): List<Int> {
         val result = mutableListOf<Int>()
         result.add(mapping[name] ?: error("Unknown predicate: $name"))
@@ -53,6 +54,26 @@ class Predicate(name: String, val terms: List<Term>) : Term(name){
 
     override fun toString(): String {
         return "Predicate(name=$name,terms=$terms)"
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        if (!super.equals(other)) return false
+
+        other as Predicate
+
+        return name == other.name && terms == other.terms
+    }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + terms.hashCode() + name.hashCode()
+        return result
+    }
+
+    fun hasArray(): Boolean {
+        return terms.any { it is Predicate && it.name ==  "[]" }
     }
 
 
