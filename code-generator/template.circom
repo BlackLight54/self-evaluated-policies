@@ -12,7 +12,7 @@ template TreeNode(branchFactor) {
    component transitiontochild[branchFactor];
    var result = 1;
    for(var i =0; i < branchFactor; i++) {
-      log("Visiting child:", i, "of", branchFactor, "with goal", children_goals[i][0], children_goals[i][1], children_goals[i][2], "from parent", goal[0], goal[1], goal[2]);
+      log("Visiting child:", i+1, "of", branchFactor, "with goal", children_goals[i][0], children_goals[i][1], children_goals[i][2], "from parent", goal[0], goal[1], goal[2]);
       transitiontochild[i] = TransitionLogic();
       transitiontochild[i].prevUnifiedBodies <-- unified_body;
       transitiontochild[i].currentGoal <-- children_goals[i];
@@ -103,8 +103,8 @@ REPLACE_PREDICATE_MAPPINGS
          has_match = 1;
       }
    }
-   if(!has_match){
-      result = 0;
+   if(has_match){
+      result = 1;
    }
 
    if((prevUnifiedBodies[0][0] == true && prevUnifiedBodies[0][1] == 0) || currentGoal[0] == true) {
@@ -130,10 +130,13 @@ template CheckNode(){
 REPLACE_PREDICATE_MAPPINGS
    var none = 0;
    var result = 0;
-REPLACE_RULE_CALLS else if(goal_args[0] == true && goal_args[1] == 0 && goal_args[2] == 0){
+REPLACE_RULE_CALLS else if(goal_args[0] == 98 || goal_args[0] == 97 || goal_args[0] == 103) {
+		// TODO: Arithmetics
+		result = 1;
+	} else if(goal_args[0] == true){
       // "true" goal
       result = 1;
-   } else if(goal_args[0] == 0 && goal_args[1] == 0 && goal_args[2] == 0){
+   } else if(goal_args[0] == 0){
       // "none" goal
       result = 1;
    }

@@ -468,12 +468,6 @@
       "term": {"args": [2000, "low" ], "name":"consumptionClass"},
       "unification": {
         "body": [
-          "rolling_treshold(high,_3982)",
-          "2000>_3982",
-          "low=high",
-          "rolling_treshold(mid,_3982)",
-          "2000>_3982",
-          "low=mid",
           "low=low"
         ],
         "goal":"consumptionClass(2000,low)"
@@ -493,19 +487,10 @@
       "term": {"args": [2000, 1400, "mid" ], "name":"savingsClass"},
       "unification": {
         "body": [
-          "savings_treshold(high,500)",
-          "600 is 2000-1400",
-          "600>500",
-          "mid=high",
           "savings_treshold(mid,500)",
           "600 is 2000-1400",
           "600>500",
-          "mid=mid",
-          "savings_treshold(low,500)",
-          "600 is 2000-1400",
-          "600>500",
-          "mid=low",
-          "mid=none"
+          "mid=mid"
         ],
         "goal":"savingsClass(2000,1400,mid)"
       },

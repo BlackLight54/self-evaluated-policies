@@ -6,7 +6,6 @@ package hu.bme.app
 import app.model.ResolutionTree
 import java.io.File
 import java.util.*
-import hu.bme.app.Parser
 
 const val maxPredicateSize = 15;
 
@@ -186,6 +185,8 @@ writeSteps:-
         }
     }
 
+
+
     val bucketVariables = findArrayPredicateVariables(rules)
     val maxBucketElementSize = findArrayTermMaxSize(rules)
     println("Bucket max size: $maxBucketElementSize")
@@ -207,13 +208,14 @@ writeSteps:-
             // Store the positions of the matching terms in the body and the head of the rule
             // It's a list of pairs, where the first element is the position in the body or the head (the head is the 0th index)
             // and the second element is the index of the argument in the predicate
+            val headPositions = mutableMapOf<String, MutableList<Int>>()
             val termPositions = mutableMapOf<String, MutableList<Pair<Int, Int>>>()
             rule.head.terms.forEachIndexed { headIndex, term ->
                 if (term is Variable) {
-                    if (!termPositions.containsKey(term.name)) {
-                        termPositions[term.name] = mutableListOf()
+                    if (!headPositions.containsKey(term.name)) {
+                        headPositions[term.name] = mutableListOf()
                     }
-                    termPositions[term.name]!!.add(Pair(0, headIndex))
+                    headPositions[term.name]!!.add(headIndex)
                 }
             }
             rule.body.forEachIndexed { bodyIndex, predicate ->
@@ -224,14 +226,15 @@ writeSteps:-
                         }
                         termPositions[term.name]!!.add(
                             Pair(
-                                bodyIndex + 1,
+                                bodyIndex,
                                 termIndex
                             )
-                        ) // +1 because the head is the 0th index
+                        )
                     }
                 }
             }
 
+            println(headPositions)
             println(termPositions)
             // From these positions, we can generate the circom code that check the unifications
             // For example, if we have the following rule:
@@ -243,13 +246,15 @@ writeSteps:-
 
             // Generate the code for the matching terms in the head
             val headUnification = termPositions.map { (name, positions) ->
-                val headPositions = positions.filter { it.first == 0 }
-                if (headPositions.isNotEmpty()) {
-                    val headPosition = headPositions.first()
+
+                if (headPositions.isNotEmpty() && headPositions.containsKey(name)) {
+                    val headPosition = headPositions[name]!!.toList()
                     buildList {
                         positions.forEach { position ->
-                            if (position.first != 0)
-                                add("goal_args[${position.second + 1}] == unified_body[${position.first - 1}][${position.second + 1}]")
+                            headPosition.forEach { headPosition ->
+                                //add("goal_args[${position.second + 1}] == unified_body[${position.first - 1}][${position.second + 1}]")
+                                add("goal_args[${headPosition + 1}] == unified_body[${position.first}][${position.second + 1}]")
+                            }
                         }
 
                     }.joinToString(" && ")
@@ -264,16 +269,15 @@ writeSteps:-
             val visited = mutableSetOf<Int>()
             val unifiedBodies = mutableListOf<String>()
             termPositions.forEach { variable, positions ->
-                val bodyPositions = positions.filter { it.first != 0 }
                 // Match the body positions with each other
-                bodyPositions.forEach { bodyPosition ->
-                    bodyPositions.forEach { otherBodyPosition ->
+                positions.forEach { bodyPosition ->
+                    positions.forEach { otherBodyPosition ->
                         if (bodyPosition != otherBodyPosition && !visited.contains(bodyPosition.first) && !visited.contains(
                                 otherBodyPosition.first
                             )
                         ) {
                             visited.add(bodyPosition.first)
-                            unifiedBodies.add("unified_body[${bodyPosition.first - 1}][${bodyPosition.second + 1}] == unified_body[${otherBodyPosition.first - 1}][${otherBodyPosition.second + 1}]")
+                            unifiedBodies.add("unified_body[${bodyPosition.first}][${bodyPosition.second + 1}] == unified_body[${otherBodyPosition.first}][${otherBodyPosition.second + 1}]")
                         }
                     }
                 }
@@ -316,26 +320,40 @@ writeSteps:-
                 rule_clauses.forEachIndexed { ind, rule ->
                     append("${rule_prefix}if ( ")
                     var prefix = ""
-                    rule.body.forEachIndexed { index, predicate ->
-                        append(
-                            "${prefix}unified_body[${index}][0] == ${
-                                if (
-                                    Parser.SPECIAL_TERMS.any {
-                                        predicate.name.contains(it)
-                                    }.not() &&
-                                    Parser.OPERATORS.any {
-                                        predicate.name.contains(it)
-                                    }.not()
+                    append(
+                        buildList {
+                            rule.body.forEachIndexed { index, predicate ->
+                                add(
+                                    "unified_body[${index}][0] == ${
+                                        if (
+                                            Parser.SPECIAL_TERMS.any {
+                                                predicate.name.contains(it)
+                                            }.not() &&
+                                            Parser.OPERATORS.any {
+                                                predicate.name.contains(it)
+                                            }.not()
+                                        )
+                                            predicate.name else if (predicate.name == "=" && predicate.terms[1].name == "[]") mapping["true"] else mapping[predicate.name]
+                                    }"
                                 )
-                                    predicate.name else if (predicate.name == "=") mapping["true"] else mapping[predicate.name]
-                            }"
-                        )
-                        prefix = " && "
-                    }
+
+                            }
+                            if(rule.body.size < rule_clauses.maxOf { it.body.size }){
+                                var counter = rule.body.size
+                                while(counter < rule_clauses.maxOf { it.body.size }){
+                                    add("unified_body[${counter}][0] == 0")
+                                    counter++
+                                }
+                            }
+                        }.joinToString(" && ")
+                    )
                     /*for (i in rule.body.size until rules.maxOf { it.value.size }) {
                         append("${prefix}unified_body[${i}][0] == none")
                     }*/
                     appendLine(" ) {")
+                    if(rule.body.any { it.hasAritmetic() }){
+                        appendLine(clauseGenerateArithmeticsCheck(rule))
+                    }
                     val knowledgeBody =
                         knowledgeBase.groupBy { it.head.name }.count { rule.body.map { it.name }.contains(it.key) }
                     if (rule.body.size == knowledgeBody) {
@@ -360,6 +378,32 @@ writeSteps:-
                     append("\t}")
                     rule_prefix = " else "
                 }
+
+                // Empty Array check
+                if(rule_clauses.any { it.head.hasArray() }){
+                    val arrayPositions = rule_clauses.map { clause ->
+                        clause.head.terms.mapIndexed { index, term ->
+                            if(term is Predicate && term.name == "[]"){
+                                index
+                            } else {
+                                -1
+                            }
+                        }.filter { it != -1 }
+                    }
+                    append("$rule_prefix if ( ")
+                    var internalPrefix = ""
+                    arrayPositions[0].forEach {
+                        append("${internalPrefix}goal_args[${it+1}] == ${mapping["[]"]}")
+                        internalPrefix = " && "
+                    }
+                    append(" && unified_body[0][0] == ${mapping["true"]}")
+                    append(" ) {")
+                    appendLine("\n\t\tresult = 1;")
+                    append("\t}")
+
+
+                }
+
                 appendLine("\n\tc <-- result;")
                 appendLine("\tc === 1;")
                 appendLine("}")
@@ -510,7 +554,6 @@ writeSteps:-
         println("'$name': $index,")
     }
 
-
     val treeJsonText = File("tree.json").readText()
     var tree = ResolutionTree.parseJson(treeJsonText,mapping)
     val maxUniBody = rules.maxOf { it.value.maxOf { it.body.size } }
@@ -595,3 +638,39 @@ fun findArrayTermMaxSize(rules: Map<String, List<Clause>>) : Int {
 }
 
 
+fun clauseGenerateArithmeticsCheck(clause: Clause): String {
+    // Generate the code to check aritmetics in a clause
+    val arithmeticPredicates = clause.body.filter { it.hasAritmetic() }
+    val asserts = buildList {
+        arithmeticPredicates.forEach{  predicate ->
+            add(predicateToString(predicate, clause.body.indexOf(predicate)))
+        }
+    }.map { "\t\tassert($it);" }
+
+    return buildString {
+        asserts.forEach {
+            appendLine(it)
+        }
+    }
+}
+
+
+fun predicateToString(predicate: Predicate,unificationIndex: Int,termIndexStart :Int = 0): String {
+    // Helper function to handle the transformation
+    fun termToString(term: Term): String = when {
+        term.name.isInt() -> term.name
+        term is Variable -> "unified_body[$unificationIndex][${predicate.terms.indexOf(term) + 1 + termIndexStart}]"
+        term is Predicate -> predicateToString(term,unificationIndex,predicate.terms.filter { (it is Predicate).not() }.size+ termIndexStart)
+        else -> throw IllegalArgumentException("Unsupported term type")
+    }
+
+    return when (predicate.name) {
+        "is" -> "${termToString(predicate.terms[0])} == ${termToString(predicate.terms[1])}"
+        "/" -> "(${termToString(predicate.terms[0])} - (${termToString(predicate.terms[0])} % ${termToString(predicate.terms[1])})) / ${termToString(predicate.terms[1])}" // Workaround for division
+        else -> "${termToString(predicate.terms[0])}  ${predicate.name} ${termToString(predicate.terms[1])}"
+    }
+}
+
+fun String.isInt(): Boolean {
+    return this.toIntOrNull() != null
+}

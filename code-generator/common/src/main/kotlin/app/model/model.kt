@@ -76,6 +76,10 @@ class Predicate(name: String, val terms: List<Term>) : Term(name) {
         return terms.any { it is Predicate && it.name ==  "[]" }
     }
 
+    fun hasAritmetic(): Boolean {
+        return terms.any { it is Predicate && it.name ==  "is" } || name == "is"
+    }
+
 
 }
 
