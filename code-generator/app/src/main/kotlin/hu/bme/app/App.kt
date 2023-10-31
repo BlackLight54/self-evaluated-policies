@@ -8,6 +8,7 @@ import java.io.File
 import java.util.*
 
 const val maxPredicateSize = 15;
+val ARITHMETIC_OPERATIONS = listOf("is","=","<",">");
 
 fun main() {
 
@@ -257,7 +258,7 @@ writeSteps:-
                             }
                         }
 
-                    }.joinToString(" && ")
+                    }.joinToString("\n")
 
                 } else {
                     ""
@@ -301,7 +302,7 @@ writeSteps:-
                 clauses.groupBy { it.head.name }.forEach { (name, _) ->
                     appendLine("\tvar ${name} = ${mapping[name]};")
                 }
-                appendLine("\n\tgoal_args[0] === ${name};")
+                //appendLine("\n\tgoal_args[0] === ${name};")
                 // Number of times we will name to check the knowledge base
                 val knowledgeBaseUsage = rule_clauses.filter { rule ->
                     rule.body.size == knowledgeBase.groupBy { it.head.name }
@@ -405,7 +406,7 @@ writeSteps:-
                 }
 
                 appendLine("\n\tc <-- result;")
-                appendLine("\tc === 1;")
+
                 appendLine("}")
             }
         )
@@ -655,22 +656,35 @@ fun clauseGenerateArithmeticsCheck(clause: Clause): String {
 }
 
 
-fun predicateToString(predicate: Predicate,unificationIndex: Int,termIndexStart :Int = 0): String {
+fun predicateToString(predicate: Predicate, unificationIndex: Int, termIndexStart: Int = 0): String {
     // Helper function to handle the transformation
     fun termToString(term: Term): String = when {
         term.name.isInt() -> term.name
         term is Variable -> "unified_body[$unificationIndex][${predicate.terms.indexOf(term) + 1 + termIndexStart}]"
-        term is Predicate -> predicateToString(term,unificationIndex,predicate.terms.filter { (it is Predicate).not() }.size+ termIndexStart)
+        term is Predicate -> predicateToString(term, unificationIndex, predicate.terms.filter { (it is Predicate).not() }.size + termIndexStart)
         else -> throw IllegalArgumentException("Unsupported term type")
     }
 
     return when (predicate.name) {
         "is" -> "${termToString(predicate.terms[0])} == ${termToString(predicate.terms[1])}"
-        "/" -> "(${termToString(predicate.terms[0])} - (${termToString(predicate.terms[0])} % ${termToString(predicate.terms[1])})) / ${termToString(predicate.terms[1])}" // Workaround for division
-        else -> "${termToString(predicate.terms[0])}  ${predicate.name} ${termToString(predicate.terms[1])}"
+        "/" -> {
+            val numerator = termToString(predicate.terms[0])
+            val denominator = termToString(predicate.terms[1])
+            "($numerator - ($numerator % $denominator)) / $denominator"
+        }
+        "*" -> {
+            // Check if any of the terms is a division
+            val leftTerm = termToString(predicate.terms[0])
+            val rightTerm = termToString(predicate.terms[1])
+            if (predicate.terms[1] is Predicate && (predicate.terms[1] as Predicate).name == "/") {
+                "$leftTerm * ($rightTerm)"
+            } else {
+                "$leftTerm * $rightTerm"
+            }
+        }
+        else -> "${termToString(predicate.terms[0])} ${predicate.name} ${termToString(predicate.terms[1])}"
     }
 }
 
-fun String.isInt(): Boolean {
-    return this.toIntOrNull() != null
-}
+fun String.isInt() = this.toIntOrNull() != null
+
