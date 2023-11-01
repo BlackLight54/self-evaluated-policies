@@ -2,6 +2,31 @@ pragma circom 2.1.0;
 
 include "node_modules/circomlib/circuits/comparators.circom";
 
+
+template ArrayIsEqual(N) {
+   signal input in[2][N];
+   signal output out;
+   
+   signal results[N];
+   component isequal[N];
+
+   isequal[0] = IsEqual();
+   isequal[0].in[0] <== in[0][0];
+   isequal[0].in[1] <== in[1][0];
+   results[0] <== isequal[0].out;
+   for(var i = 1; i < N; i++) {
+      isequal[i] = IsEqual();
+      isequal[i].in[0] <== in[0][i];
+      isequal[i].in[1] <== in[1][i];
+      results[i] <== results[i-1] + isequal[i].out;
+   }
+
+   signal final_result;
+   final_result <== IsEqual()([results[N-1], N]);
+
+   out <== final_result;
+}
+
 template TreeNode(branchFactor) {
    // Each node's data
    signal input goal[5];
@@ -18,7 +43,7 @@ template TreeNode(branchFactor) {
    transitiontochild[0].currentGoal <== children_goals[0];
    result[0] <==  transitiontochild[0].transition_okay;
    for(var i =1; i < branchFactor; i++) {
-      log("Visiting child:", i, "of", branchFactor, "with goal", children_goals[i][0], children_goals[i][1], children_goals[i][2], "from parent", goal[0], goal[1], goal[2]);
+      log("Visiting child:", i+1, "of", branchFactor, "with goal", children_goals[i][0], children_goals[i][1], children_goals[i][2], "from parent", goal[0], goal[1], goal[2]);
       transitiontochild[i] = TransitionLogic();
       transitiontochild[i].prevUnifiedBodies <== unified_body;
       transitiontochild[i].currentGoal <== children_goals[i];
@@ -196,18 +221,21 @@ template CheckNode(){
    signal output c;
 REPLACE_PREDICATE_MAPPINGS
    var none = 0;
-   var result = 0;
 REPLACE_RULE_CALLS
    component trueSelector = IsEqual();
    trueSelector.in[0] <== goal_args[0];
    trueSelector.in[1] <== true;
-   result += trueSelector.out;
+   result[REPLACE_RULE_COUNT+ARITMETHICS_COUNT-2] <== trueSelector.out + result[REPLACE_RULE_COUNT+ARITMETHICS_COUNT-3];
 
    component noneSelector = IsZero();
    noneSelector.in <== goal_args[0];
-   result += noneSelector.out;
+   result[REPLACE_RULE_COUNT+ARITMETHICS_COUNT-1] <== noneSelector.out + result[REPLACE_RULE_COUNT+ARITMETHICS_COUNT-2];
 
-   c <-- result;
+
+   signal finalResult;
+   finalResult <== GreaterEqThan(8)([result[REPLACE_RULE_COUNT+ARITMETHICS_COUNT-1], 1]);
+
+   c <== finalResult;
    c === 1;
 }
 
@@ -219,23 +247,25 @@ template KnowledgeChecker() {
    signal output c;
    var len = REPLACE_KNOWLEDGE_BASE_LEN;
    var knowledgeBase[len][MAX_BODY_SIZE] = [REPLACE_KNOWLEDGE_BASE_ARRAY];
-   var result = 0;
-   if(a[0] == 0 && a[1] == 0 && a[2] == 0) {
-      result = 1;
+   signal result[len];
+   component arrayIsEqual[len];
+
+
+   arrayIsEqual[0] = ArrayIsEqual(MAX_BODY_SIZE);
+   arrayIsEqual[0].in[0] <== a;
+   arrayIsEqual[0].in[1] <== knowledgeBase[0];
+   result[0] <== arrayIsEqual[0].out;
+
+   for(var i = 1; i < len; i++){
+      arrayIsEqual[i] = ArrayIsEqual(MAX_BODY_SIZE);
+      arrayIsEqual[i].in[0] <== a;
+      arrayIsEqual[i].in[1] <== knowledgeBase[i];
+      result[i] <== arrayIsEqual[i].out + result[i-1];
    }
-   for(var i = 0; i < len; i++){
-      var so_far_so_good = 1;
-      for(var j=0; j < 3; j++){
-         if(a[j] != knowledgeBase[i][j]){
-            so_far_so_good = 0;
-         }
-      }
-      if(so_far_so_good == 1){
-         result = 1;
-      }
-   }
-   c <-- result;
-   c === 1;
+
+   signal final_result;
+   final_result <== IsEqual()([result[len-1], 1]);
+   c <-- final_result;
  }
 
  component main = PrologResolutionTree(REPLACE_MAX_DEPTH, REPLACE_BRANCH_FACTOR);
