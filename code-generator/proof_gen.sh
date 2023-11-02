@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # This script generates the proof for the circuit in the file
-if  ! test -f "powersOfTau28_hez_final_22.ptau"; then
-    echo "Downloading powersOfTau28_hez_final_22.ptau"
-    wget https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_22.ptau
+if  ! test -f "powersOfTau28_hez_final_21.ptau"; then
+    echo "Downloading powersOfTau28_hez_final_21.ptau"
+    wget https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_21.ptau
 fi
 startPlonkSetup=$(date +%s)
 echo "Plonk setup start time: $startPlonkSetup"
