@@ -1,5 +1,4 @@
 % policy.pl 
-:- include('./matrix.pl').
 
 % Flow: 
 % 1. sum individual past consumptions
@@ -31,7 +30,7 @@ consumptionClass(RollingConsumption,Class):-
     rolling_treshold('mid',Treshold),
     RollingConsumption > Treshold,
     Class = 'mid'.
-consumptionClass(RollingConsumption,Class):-
+consumptionClass(_RollingConsumption,Class):-
     Class = 'low'.
 
 % === 4. classify using savings ===
@@ -49,7 +48,8 @@ savingsClass(RollingConsumption,Consumption,Class):-
     savings_treshold('low',Treshold),
     CurrentSaving is RollingConsumption - Consumption,
     CurrentSaving > Treshold,
-    Class = 'low';
+    Class = 'low'.
+savingsClass(_RollingConsumption,_Consumption,Class):-
     Class = 'none'.
 
 % === 5. Apply savings based support ===

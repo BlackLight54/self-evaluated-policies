@@ -1,22 +1,23 @@
-:- use_module(library(http/json)).
-
 % Meta-interpreter
-%
-% base case, end(leaf) of the proof tree
-mi_proof_tree(true, [true]).
-% conjunction
-mi_proof_tree((A, B), Tree) :-
+
+%  === base case, end(leaf) of the proof tree ===
+prove(true, [true]) :- !.
+
+% === conjunction ===
+prove((A, B), Tree) :-
     !,
-    mi_proof_tree(A, TreeA),
-    mi_proof_tree(B, TreeB),
+    prove(A, TreeA),
+    prove(B, TreeB),
     append([TreeA, TreeB], Tree). % is append part of ISO prolog? If not, its source is just a few clauses
-% disjunciton
-mi_proof_tree((A; _), Tree) :-
-    mi_proof_tree(A, Tree).
-mi_proof_tree((_; B), Tree) :-
-    mi_proof_tree(B, Tree).
-% handle built-in predicates
-mi_proof_tree(Goal, [State]) :-
+
+% === disjunciton ===
+prove((A; _), Tree) :-
+    prove(A, Tree).
+prove((_; B), Tree) :-
+    prove(B, Tree).
+
+% === handle built-in predicates ===
+prove(Goal, [State]) :-
     predicate_property(Goal, built_in), % is this prperty part of ISO prolog?
     !,
     call(Goal),
@@ -24,24 +25,24 @@ mi_proof_tree(Goal, [State]) :-
     findall((Var, Value), (member(Var, Goal), Var = Value), Substitution),
     State = state{
         goal:Goal,
-        goal_unification:_{goal:OriginalGoal,body:null},
+        goal_unification:{goal:OriginalGoal,body:null},
         substitution:Substitution,
         subtree:[true]
     }.
 
-% general case
-mi_proof_tree(Goal, [State]) :-
-    % Goal \= true, %  predicate_property(A, built_in) already filters these, but i don't know if its part of ISO prolog
+% === general case ===
+prove(Goal, [State]) :-
+    Goal \= true, %  predicate_property(A, built_in) already filters these, but i don't know if its part of ISO prolog
     % Goal \= (_,_),
     % Goal \= (_\=_), 
     clause(Goal, Body),
-    copy_term((Goal, Body), (OriginalGoal, OriginalBody)),
-    mi_proof_tree(Body, Tree),
+    copy_term((Goal, Body), (OriginalGoal, _OriginalBody)),
+    prove(Body, Tree),
     findall((Var, Value), (member(Var, Goal), Var = Value), Substitution),
     extract_predicates(Body,OriginalBodyPredicates),
     getTermDictFromTerm(Goal, GoalDict),
-    getTermDictFromTerm(OriginalGoal, OriginalGoalDict),
-%    write("GoalDict: "), write(OriginalGoalDict), nl,
+    getTermDictFromTerm(OriginalGoal, _OriginalGoalDict),
+%    write("GoalDict: "), write(OriginalGoalDict), nl, %% TODO: Test if pre-eval substitution can be extrected
     State = state{
         goal:Goal,
         goal_term: GoalDict,
@@ -74,45 +75,9 @@ PredicatesList = [Term]
 
 getTermDictFromTerm(Term, TermDict):-
     Term =.. [Name|Args],
-    TermDict = _{name:Name, args:Args}.
+    TermDict = {name:Name, args:Args}.
 
 getTermDictFromTermList([], []).
 getTermDictFromTermList([Term|OtherTerms], [TermDict|OtherTermDicts]):-
     getTermDictFromTerm(Term, TermDict),
     getTermDictFromTermList(OtherTerms, OtherTermDicts).
-
-% simply print the proof tree to the terminal
-print_proof_tree(A):-
-    write("Proof tree for: "), write(A), nl,
-    mi_proof_tree(A, [Tree]),
-    write("Proof tree: "), write(Tree), nl.
-
-prove(A):-
-    mi_proof_tree(A,[Tree])
-    ,json_write(current_output, Tree,[serialize_unknown(true)])
-%   ,print_tree_pretty(Tree)
-    .
-
-% print a tree representation of the proof tree to the terminal
-print_tree_pretty(Tree):-
-    print_tree_pretty(Tree, 0).
-print_tree_pretty([true], Indent):-
-    tab(Indent),
-    write("< "),
-    write(true), nl.
-print_tree_pretty([state{goal:Goal,goal_unification:U,substitution:S,subtree:Children}], Indent):-
-    tab(Indent), 
-    write( ":> "),
-    write(Goal),
-    write(" <> "),
-    write(U),
-    write(" >< "),
-    write(S),
-    nl,
-    NewIndent is Indent + 4,
-    print_children_pretty(Children, NewIndent).
-
-print_children_pretty([], _).
-print_children_pretty([Child|OtherChildren], Indent):- 
-    print_tree_pretty([Child], Indent),
-    print_children_pretty(OtherChildren, Indent).
