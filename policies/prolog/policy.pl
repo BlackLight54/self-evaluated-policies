@@ -92,30 +92,3 @@ endPrice(Price):-
 inputPriceOk:-
     endPrice(Price),
     inputPayment(Price).
-
-writeSteps:-
-    monthlyConsumptions(MonthlyConsumptions),
-    sumOfMonthlyConsumptions(MonthlyConsumptions,Sum),
-    rollingConsumption(Sum,RollingConsumption),
-    currentConsumption(Consumption),
-    consumptionClass(RollingConsumption,ConsumptionClass),
-    savingsClass(RollingConsumption,Consumption,SavingsClass),
-    priceBase(PriceBase),
-    applySavingsSupport(PriceBase, SavingsClass, ConsumptionClass, PriceAfterSavings),
-    socialCreds(Creds),
-    applySocialSupports(PriceAfterSavings,Creds,Price),
-    write('Monthly consumptions: '), write(MonthlyConsumptions),nl,
-    write('Sum of monthly consumptions: '), write(Sum),nl,
-    write('Rolling consumption: '), write(RollingConsumption),nl,
-    write('Current consumption: '), write(Consumption),nl,
-    write('Consumption class: '), write(ConsumptionClass),nl,
-    write('Savings class: '), write(SavingsClass),nl,
-    write('Price base: '), write(PriceBase),nl,
-    write('Price after savings: '), write(PriceAfterSavings),nl,
-    write('Social creds: '), write(Creds),nl,
-    write('Price: '), write(Price),nl.
-
-start:- 
-    endPrice(_),
-    inputPriceOk,
-    write('Input price and calcualted price match!'),nl.
