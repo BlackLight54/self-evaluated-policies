@@ -16,7 +16,7 @@ fun addGoalHeader() {
 
 fun main() {
 
-    val prologCode = """
+    val policyPrologProgram = """
 % policy.pl 
 % input.pl
 monthly_consumption(1,2001).
@@ -167,7 +167,7 @@ writeSteps:-
     applySocialSupports(PriceAfterSavings,Creds,Price).
     """.trimIndent()
 
-    val clauses = Parser.parseProlog(prologCode)
+    val clauses = Parser.parseProlog(policyPrologProgram)
     //clauses.forEach { println(it) }
     val mapping = createMapping(clauses)
 
@@ -175,7 +175,9 @@ writeSteps:-
         println("$name: $index")
     }
     println("Knowledge base:")
-    clauses.filter { it.body.isEmpty() }.forEach { clause ->
+    clauses
+        .filter { it.body.isEmpty() }
+        .forEach { clause ->
         println(clause.head.encode(mapping))
     }
     val knowledgeBase = clauses.filter { it.body.isEmpty() }
