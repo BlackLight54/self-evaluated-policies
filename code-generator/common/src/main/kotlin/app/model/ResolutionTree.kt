@@ -167,14 +167,14 @@ data class ResolutionTree(var goal: List<Int>, var unification: List<List<Int>>,
                 val goal = Parser.parseProlog(jsonObject.getString("goal") + ".")[0].head
                 val encodedGoal = refactorPredicateMapping(goal, mapping)
 
-                val unification = if ((jsonObject.getJSONObject("unification")
+                val unification = if ((jsonObject.getJSONObject("goal_unification")
                         .get("body") is String).not()
-                ) jsonObject.getJSONObject("unification").getJSONArray("body")
+                ) jsonObject.getJSONObject("goal_unification").getJSONArray("body")
                     .map {
                         val predicate = Parser.parsePredicate(it.toString())
                         refactorPredicateMapping(predicate, mapping)
                     } else listOf<List<Int>>()
-                val children = jsonObject.getJSONArray("ztree").map { parseJson(it.toString(), mapping) }
+                val children = jsonObject.getJSONArray("subtree").map { parseJson(it.toString(), mapping) }
                 return ResolutionTree(encodedGoal, unification, children)
             } else {
                 // Its a leaf, i.e. either true or false
