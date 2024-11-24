@@ -58,9 +58,9 @@ priceBase(PriceBase):-
     currentPrice(Price,'HUF'),
     PriceBase is Price * Amount.
 
-applySupport(Input, 'nominal', Value, Output):-
+applySupport(Input, nominal, Value, Output):-
     Output is Input - Value.
-applySupport(Input, 'percent', Value, Output):-
+applySupport(Input, percent, Value, Output):-
     AmountToBeSubtracted is Input * Value div 100,
     Output is Input - AmountToBeSubtracted.
 
@@ -69,7 +69,7 @@ applySavingsSupport(Input, SavingsClass, RollingClass, Output):-
     applySupport(Input, Type, Value, Output).
 
 % === 6. Apply social standing based support ===
-socialCreds(Creds):- Creds = [('ChangedWorkcapacityCredential','nominal',10000)].
+socialCreds(Creds):- Creds = [('ChangedWorkcapacityCredential',nominal,10000)].
 % socialCreds(Creds) :- findall((CredType,SupportType,SupportValue), social_suport(CredType,SupportType,SupportValue), Creds).
 
 applySocialSupports(Input,[(_,SupportType,SupportValue)|CredsTail],Result):-
