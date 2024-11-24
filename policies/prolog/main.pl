@@ -9,7 +9,7 @@
 
 
 main:-
-    prove(inputPriceOk,[Tree])
+    prove(endPrice(931220),[Tree])
     ,json_write_dict(current_output, Tree,[width(100),serialize_unknown(true)])
     ,halt
     .

@@ -25,7 +25,7 @@ prove(Goal, [State]) :-
     findall((Var, Value), (member(Var, Goal), Var = Value), Substitution),
     State = state{
         goal:Goal,
-        goal_unification:{goal:OriginalGoal,body:null},
+        goal_unification:_{goal:OriginalGoal,body:[]},
         substitution:Substitution,
         subtree:[true]
     }.
@@ -33,8 +33,8 @@ prove(Goal, [State]) :-
 % === general case ===
 prove(Goal, [State]) :-
     Goal \= true, %  predicate_property(A, built_in) already filters these, but i don't know if its part of ISO prolog
-    % Goal \= (_,_),
-    % Goal \= (_\=_), 
+    Goal \= (_,_),
+    Goal \= (_\=_),
     clause(Goal, Body),
     copy_term((Goal, Body), (OriginalGoal, _OriginalBody)),
     prove(Body, Tree),
