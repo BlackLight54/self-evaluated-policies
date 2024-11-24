@@ -75,7 +75,7 @@ PredicatesList = [Term]
 
 getTermDictFromTerm(Term, TermDict):-
     Term =.. [Name|Args],
-    TermDict = {name:Name, args:Args}.
+    TermDict = _{name:Name, args:Args}.
 
 getTermDictFromTermList([], []).
 getTermDictFromTermList([Term|OtherTerms], [TermDict|OtherTermDicts]):-
