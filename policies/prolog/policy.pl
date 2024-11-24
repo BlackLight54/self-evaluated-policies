@@ -1,5 +1,4 @@
 % policy.pl 
-:- include('./input.pl').
 :- include('./matrix.pl').
 
 % Flow: 
@@ -92,7 +91,7 @@ endPrice(Price):-
 
 inputPriceOk:-
     endPrice(Price),
-    inputPrice(Price).
+    inputPayment(Price).
 
 writeSteps:-
     monthlyConsumptions(MonthlyConsumptions),
@@ -119,8 +118,4 @@ writeSteps:-
 start:- 
     endPrice(_),
     inputPriceOk,
-    write('Input price and calcualted price match!'),nl,
-    halt(0).
-
-
-
+    write('Input price and calcualted price match!'),nl.

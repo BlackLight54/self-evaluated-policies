@@ -1,5 +1,3 @@
-:- include("./policy.pl").
-:- include("./testprograms.pl").
 :- use_module(library(http/json)).
 
 % Meta-interpreter
@@ -24,7 +22,12 @@ mi_proof_tree(Goal, [State]) :-
     call(Goal),
     copy_term(Goal, OriginalGoal),
     findall((Var, Value), (member(Var, Goal), Var = Value), Substitution),
-    State = state{goal:Goal, unification:_{goal:OriginalGoal,body:null}, substitution:Substitution, ztree:[true]}.
+    State = state{
+        goal:Goal,
+        goal_unification:_{goal:OriginalGoal,body:null},
+        substitution:Substitution,
+        subtree:[true]
+    }.
 
 % general case
 mi_proof_tree(Goal, [State]) :-
@@ -38,18 +41,18 @@ mi_proof_tree(Goal, [State]) :-
     extract_predicates(Body,OriginalBodyPredicates),
     getTermDictFromTerm(Goal, GoalDict),
     getTermDictFromTerm(OriginalGoal, OriginalGoalDict),
-    write("GoalDict: "), write(OriginalGoalDict), nl,
+%    write("GoalDict: "), write(OriginalGoalDict), nl,
     State = state{
         goal:Goal,
-        term: GoalDict,
-        unification:_{
+        goal_term: GoalDict,
+        goal_unification:_{
             goal:Goal,
-            % goalTerm:OriginalGoalDict,
+%            goalTerm:OriginalGoalDict,
             body:OriginalBodyPredicates
-            % bodyTerm:OriginalBodyPredicatesDict
+%            bodyTerm:OriginalBodyPredicatesDict
             },
         substitution:Substitution,
-        ztree:Tree
+        subtree:Tree
         }.
 
 extract_predicates(Term, PredicatesList) :-
@@ -79,13 +82,16 @@ getTermDictFromTermList([Term|OtherTerms], [TermDict|OtherTermDicts]):-
     getTermDictFromTermList(OtherTerms, OtherTermDicts).
 
 % simply print the proof tree to the terminal
-print_proof_tree(A):- 
+print_proof_tree(A):-
+    write("Proof tree for: "), write(A), nl,
     mi_proof_tree(A, [Tree]),
     write("Proof tree: "), write(Tree), nl.
 
 prove(A):-
-    mi_proof_tree(A,[Tree]),
-    json_write(current_output, Tree,[serialize_unknown(true)]).
+    mi_proof_tree(A,[Tree])
+    ,json_write(current_output, Tree,[serialize_unknown(true)])
+%   ,print_tree_pretty(Tree)
+    .
 
 % print a tree representation of the proof tree to the terminal
 print_tree_pretty(Tree):-
@@ -94,7 +100,7 @@ print_tree_pretty([true], Indent):-
     tab(Indent),
     write("< "),
     write(true), nl.
-print_tree_pretty([state{goal:Goal,unification:U,substitution:S,ztree:Children}], Indent):- 
+print_tree_pretty([state{goal:Goal,goal_unification:U,substitution:S,subtree:Children}], Indent):-
     tab(Indent), 
     write( ":> "),
     write(Goal),
@@ -110,6 +116,3 @@ print_children_pretty([], _).
 print_children_pretty([Child|OtherChildren], Indent):- 
     print_tree_pretty([Child], Indent),
     print_children_pretty(OtherChildren, Indent).
-
-
-

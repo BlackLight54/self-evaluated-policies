@@ -1,5 +1,15 @@
 # Self-Evaluating-Policies-w-ZKPs
 
+## How to use
+
+### Meta-interpreter
+Open the relevant source files in SWI-Prolog, and run with the desired query.
+```bash
+swipl -s ./policies/prolog/meta_interpreter.pl -s ./policies/prolog/policy.pl -s ./policies/prolog/input.pl -t "prove(inputPriceOk)."
+```
+
+### Proof parser
+
 
 ## Meta-interpreter
 Sources: 
