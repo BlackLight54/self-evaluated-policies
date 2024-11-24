@@ -103,7 +103,8 @@ class Parser : prologBaseListener() {
             ">>",
             "**",
             "^",
-            "\\"
+            "\\",
+            "div",
         )
 
         /**

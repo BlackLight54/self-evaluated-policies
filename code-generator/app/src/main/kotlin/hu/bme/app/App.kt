@@ -701,7 +701,7 @@ fun predicateToString(predicate: Predicate, unificationIndex: Int, termIndexStar
             val denominator = termToString(predicate.terms[1])
             "($numerator - ($numerator % $denominator)) / $denominator"
         }
-
+        "div" -> "${termToString(predicate.terms[0])} % ${termToString(predicate.terms[1])}"
         "*" -> {
             // Check if any of the terms is a division
             val leftTerm = termToString(predicate.terms[0])
