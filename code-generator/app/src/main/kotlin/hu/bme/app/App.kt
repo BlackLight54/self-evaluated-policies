@@ -8,16 +8,28 @@ import java.io.File
 import java.util.*
 
 const val maxPredicateSize = 15;
-val  ARITHMETIC_OPERATIONS = listOf("is", "=", "<", ">");
+val ARITHMETIC_OPERATIONS = listOf("is", "=", "<", ">");
 const val DEBUGGING = true;
 fun addGoalHeader() {
 
 }
 
-fun main() {
-    val policyPrologProgram = File("../../policies/prolog/policy.pl").readText()
 
-    val clauses = Parser.parseProlog(policyPrologProgram)
+private const val policyFile = "../../policies/prolog/policy.pl"
+private const val policyMatrixFile = "../../policies/prolog/matrix.pl"
+private const val policyInputFile = "../../policies/prolog/input.pl"
+private const val proofTreeJsonFile = "../../tree.json"
+
+private const val templateFile = "../template.circom"
+private const val circomFileLocation = "../../generated.circom"
+private const val circuitInputFile = "../../input_tree.json"
+
+fun main() {
+    val policyPrologProgram = File(policyFile).readText()
+    val policyMatrixPrologProgram = File(policyMatrixFile).readText()
+    val policyInputExamplePrologProgram = File(policyInputFile).readText()
+    val prologProgram = policyPrologProgram + policyMatrixPrologProgram + policyInputExamplePrologProgram
+    val clauses = Parser.parseProlog(prologProgram)
     //clauses.forEach { println(it) }
     val mapping = createMapping(clauses)
 
@@ -28,8 +40,8 @@ fun main() {
     clauses
         .filter { it.body.isEmpty() }
         .forEach { clause ->
-        println(clause.head.encode(mapping))
-    }
+            println(clause.head.encode(mapping))
+        }
     val knowledgeBase = clauses.filter { it.body.isEmpty() }
     println("Rules:")
     val rules = clauses.filter { it.body.isNotEmpty() }.groupBy { it.head.name }
@@ -97,7 +109,7 @@ fun main() {
 
                 rule_clauses.forEachIndexed { ind, rule ->
                     if (rule.body.any { it.hasAritmetic() }) {
-                        appendLine(clauseGenerateArithmeticsCheck(rule,ind))
+                        appendLine(clauseGenerateArithmeticsCheck(rule, ind))
                     }
                     val knowledgeBody =
                         knowledgeBase.groupBy { it.head.name }.count { rule.body.map { it.name }.contains(it.key) }
@@ -161,13 +173,13 @@ fun main() {
 
 
                 }
-                val extraConstraintCountIfNeeded = if (rule_clauses.any { it.head.hasArray()}) 1 else 0
+                val extraConstraintCountIfNeeded = if (rule_clauses.any { it.head.hasArray() }) 1 else 0
                 appendLine("\tsignal finalResult;")
-                appendLine("\tfinalResult <== GreaterEqThan(8)([result[${rule_clauses.size +extraConstraintCountIfNeeded- 1}], 1]);")
-                if(DEBUGGING){
+                appendLine("\tfinalResult <== GreaterEqThan(8)([result[${rule_clauses.size + extraConstraintCountIfNeeded - 1}], 1]);")
+                if (DEBUGGING) {
                     appendLine("\tif(finalResult != 1 && goal_args[0] == $name) {")
                     appendLine("\t\tlog(\"${name} failed\");")
-                    IntArray(rule_clauses.size +extraConstraintCountIfNeeded) { it }.forEachIndexed { index, it ->
+                    IntArray(rule_clauses.size + extraConstraintCountIfNeeded) { it }.forEachIndexed { index, it ->
                         appendLine("\t\tlog(\"Result[${index}] failed: \", result[${it}]);")
                     }
                     appendLine("\t} else {")
@@ -310,7 +322,7 @@ fun main() {
     val maxDepth = 4;
 
 
-    val template = File("../template.circom").readText()
+    val template = File(templateFile).readText()
 
     // Padded knowledge base. Each element in the knowledge base shall have a uniform length
     // Specifically, the length of the element with the longest length
@@ -341,18 +353,18 @@ fun main() {
         .replace("REPLACE_RULE_COUNT", (rules.size + knowledgeBase.groupBy { it.head.name }.size + 2).toString())
         .replace("ARITMETHICS_COUNT", ARITHMETIC_OPERATIONS.filter { mapping.contains(it) }.size.toString())
 
-    File("generated.circom").writeText(generatedCode)
+    File(circomFileLocation).writeText(generatedCode)
 
     mapping.forEach { (name, index) ->
         println("'$name': $index,")
     }
 
-    val treeJsonText = File("../tree.json").readText()
+    val treeJsonText = File(proofTreeJsonFile).readText()
     var tree = ResolutionTree.parseJson(treeJsonText, mapping)
     val maxUniBody = rules.maxOf { it.value.maxOf { it.body.size } }
     //println(tree.getMaxDepth())
     tree = tree.standardize(unificationCount_input = branchingFactor, max_elements = maxPerdicateLength);
-    File("input_tree.json").writeText(tree.toBFSJson(bucketSize = bucketSize))
+    File(circuitInputFile).writeText(tree.toBFSJson(bucketSize = bucketSize))
 }
 
 private fun generateConstraints(
@@ -361,13 +373,13 @@ private fun generateConstraints(
     additionalConstraintCount: Int = 0
 ) {
 
-    stringBuilder.appendLine("\tsignal result[${rule_clauses.size+additionalConstraintCount}];")
+    stringBuilder.appendLine("\tsignal result[${rule_clauses.size + additionalConstraintCount}];")
     rule_clauses.forEachIndexed { ruleIndex, rule ->
-        val constraintCount =  constraintCount(rule,additionalConstraintCount)
+        val constraintCount = constraintCount(rule, additionalConstraintCount)
         val (headPositions, termPositions) = getArgumentPositions(rule)
         var constraintIndex = 0
         stringBuilder.appendLine("\tsignal intermediateResult${ruleIndex}[${constraintCount}];")
-        if(rule.body[0].name == "="){
+        if (rule.body[0].name == "=") {
             stringBuilder.appendLine("\tintermediateResult${ruleIndex}[0] <== 1;")
         } else {
             // Generate the code for the matching terms in the head
@@ -429,7 +441,7 @@ private fun generateConstraints(
         }
         stringBuilder.appendLine("\tsignal resConstraint${ruleIndex};")
         stringBuilder.appendLine("\tresConstraint${ruleIndex} <== IsEqual()([intermediateResult${ruleIndex}[${constraintCount - 1}], ${constraintCount}]);")
-        if(ruleIndex == 0){
+        if (ruleIndex == 0) {
             stringBuilder.appendLine("\tresult[${ruleIndex}] <== resConstraint${ruleIndex} * ruleSelector[$ruleIndex];")
         } else {
             stringBuilder.appendLine("\tresult[${ruleIndex}] <== resConstraint${ruleIndex} * ruleSelector[$ruleIndex] + result[${ruleIndex - 1}];")
@@ -440,10 +452,10 @@ private fun generateConstraints(
     }
 }
 
-fun constraintCount(rule: Clause,additionalConstraintCount: Int = 0): Int {
+fun constraintCount(rule: Clause, additionalConstraintCount: Int = 0): Int {
     val (headPositions, termPositions) = getArgumentPositions(rule)
     var constraintCount = 0
-    if(rule.body[0].name == "="){
+    if (rule.body[0].name == "=") {
         return 1
     }
     // Generate the code for the matching terms in the head
@@ -663,14 +675,18 @@ fun findArrayTermMaxSize(rules: Map<String, List<Clause>>): Int {
 }
 
 
-fun clauseGenerateArithmeticsCheck(clause: Clause,index :Int): String {
+fun clauseGenerateArithmeticsCheck(clause: Clause, index: Int): String {
     // Generate the code to check aritmetics in a clause
     val arithmeticPredicates = clause.body.filter { it.hasAritmetic() }
     val asserts = buildList {
         arithmeticPredicates.forEach { predicate ->
             add(predicateToString(predicate, clause.body.indexOf(predicate)))
         }
-    }.map { "\t\truleSelector[$index]*($it) === 0;" }
+    }.map {
+         "${it.prefix}\n" +
+                "ruleSelector[$index]*(${it.infix}) === 0;\n" +
+                "${it.postfix}\n"
+    }
 
     return buildString {
         asserts.forEach {
@@ -679,12 +695,13 @@ fun clauseGenerateArithmeticsCheck(clause: Clause,index :Int): String {
     }
 }
 
+data class PredArithConstr(val infix: String, val prefix: String = "", val postfix: String = "") {}
 
-fun predicateToString(predicate: Predicate, unificationIndex: Int, termIndexStart: Int = 0): String {
+fun predicateToString(predicate: Predicate, unificationIndex: Int, termIndexStart: Int = 0): PredArithConstr {
     // Helper function to handle the transformation
-    fun termToString(term: Term): String = when {
-        term.name.isInt() -> term.name
-        term is Variable -> "unified_body[$unificationIndex][${predicate.terms.indexOf(term) + 1 + termIndexStart}]"
+    fun termToString(term: Term): PredArithConstr = when {
+        term.name.isInt() -> PredArithConstr(term.name)
+        term is Variable -> PredArithConstr("unified_body[$unificationIndex][${predicate.terms.indexOf(term) + 1 + termIndexStart}]")
         term is Predicate -> predicateToString(
             term,
             unificationIndex,
@@ -695,31 +712,87 @@ fun predicateToString(predicate: Predicate, unificationIndex: Int, termIndexStar
     }
 
     return when (predicate.name) {
-        "is" -> "${termToString(predicate.terms[0])} == ${termToString(predicate.terms[1])}"
+        "is" -> {
+            val rterm = predicate.terms[1]
+            val lConstr = termToString(predicate.terms[0])
+            val rConstr = termToString(predicate.terms[1])
+            val prefix = lConstr.prefix + "\n" + rConstr.prefix
+            val postfix = lConstr.postfix + "\n" + rConstr.postfix
+            if (
+                rterm is Predicate && rterm.name == "+" ||
+                rterm is Predicate && rterm.name == "-" ||
+                rterm is Predicate && rterm.name == "/" ||
+                rterm is Predicate && rterm.name == "div" ||
+                rterm is Predicate && rterm.name == "*"
+            ) {
+                PredArithConstr("${lConstr.infix} - (${rConstr.infix})", prefix, postfix)
+            } else {
+                PredArithConstr("${lConstr.infix} == ${rConstr.infix}", prefix, postfix)
+            }
+        }
+
         "/" -> {
             val numerator = termToString(predicate.terms[0])
             val denominator = termToString(predicate.terms[1])
-            "($numerator - ($numerator % $denominator)) / $denominator"
+
+            val prefix = numerator.prefix + "\n" + denominator.prefix
+            val infix = "(${numerator.infix} / ${denominator.infix})"
+            val postfix = numerator.postfix + "\n" + denominator.postfix
+            PredArithConstr(infix, prefix, postfix)
         }
-        "div" -> "${termToString(predicate.terms[0])} % ${termToString(predicate.terms[1])}"
+
+        "div" -> {
+            val numerator = termToString(predicate.terms[0])
+            val denominator = termToString(predicate.terms[1])
+
+            val prefix = numerator.prefix + "\n" + denominator.prefix
+            val infix = "(${numerator.infix} / ${denominator.infix})"
+            val postfix = numerator.postfix + "\n" + denominator.postfix
+            PredArithConstr(infix, prefix, postfix)
+        }
+
+        "-" -> {
+//            PredArithConstr("${termToString(predicate.terms[0])} + ${termToString(predicate.terms[1])}")
+            val leftTerm = termToString(predicate.terms[0])
+            val rightTerm = termToString(predicate.terms[1])
+
+            val prefix = leftTerm.prefix + "\n" + rightTerm.prefix
+            val infix = "${leftTerm.infix} - ${rightTerm.infix}"
+            val postfix = leftTerm.postfix + "\n" + rightTerm.postfix
+            PredArithConstr(infix, prefix, postfix)
+        }
+
         "*" -> {
             // Check if any of the terms is a division
             val leftTerm = termToString(predicate.terms[0])
             val rightTerm = termToString(predicate.terms[1])
-            if (predicate.terms[1] is Predicate && (predicate.terms[1] as Predicate).name == "/") {
-                "$leftTerm * ($rightTerm)"
-            } else {
-                "$leftTerm * $rightTerm"
-            }
+
+            val prefix =
+                "signal temp$termIndexStart;\n" +
+                        "temp$termIndexStart <== ${leftTerm.infix} * ${rightTerm.infix};\n" +
+                        "${leftTerm.prefix}\n" +
+                        "${rightTerm.prefix}\n"
+            val infix = "temp$termIndexStart"
+            val postfix = leftTerm.postfix + "\n" + rightTerm.postfix
+            PredArithConstr(infix, prefix, postfix)
         }
 
-        else -> "${termToString(predicate.terms[0])} ${predicate.name} ${termToString(predicate.terms[1])}"
+        else -> {
+//            PredArithConstr("${termToString(predicate.terms[0])} ${predicate.name} ${termToString(predicate.terms[1])}")
+            val leftTerm = termToString(predicate.terms[0])
+            val rightTerm = termToString(predicate.terms[1])
+
+            val prefix = leftTerm.prefix + "\n" + rightTerm.prefix
+            val infix = "${leftTerm.infix} ${predicate.name} ${rightTerm.infix}"
+            val postfix = leftTerm.postfix + "\n" + rightTerm.postfix
+            PredArithConstr(infix, prefix, postfix)
+        }
     }
 }
 
 fun String.isInt() = this.toIntOrNull() != null
 
-fun arrayConstraintCount(rule_clauses: List<Clause>):Int {
+fun arrayConstraintCount(rule_clauses: List<Clause>): Int {
     return rule_clauses.map { clause ->
         clause.head.terms.mapIndexed { index, term ->
             if (term is Predicate && term.name == "[]") {
