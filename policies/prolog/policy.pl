@@ -58,15 +58,15 @@ priceBase(PriceBase):-
     currentPrice(Price,'HUF'),
     PriceBase is Price * Amount.
 
-applySupport(Input, nominal, Value, Output):-
-    Output is Input - Value.
-applySupport(Input, percent, Value, Output):-
-    AmountToBeSubtracted is Input * Value div 100,
-    Output is Input - AmountToBeSubtracted.
+applySupport(ApplySupportInput, nominal, ApplySupportValue, ApplySupportOutput):-
+    ApplySupportOutput is ApplySupportInput - ApplySupportValue.
+applySupport(ApplySupportInput, percent, ApplySupportValue, ApplySupportOutput):-
+    AmountToBeSubtracted is ApplySupportInput * ApplySupportValue div 100,
+    ApplySupportOutput is ApplySupportInput - AmountToBeSubtracted.
 
-applySavingsSupport(Input, SavingsClass, RollingClass, Output):-
-    support_matrix(RollingClass, SavingsClass, Type, Value),
-    applySupport(Input, Type, Value, Output).
+applySavingsSupport(ApplySavingsSupportInput, ApplySavingsSupportSavingsClass, ApplySavingsSupportRollingClass, ApplySavingsSupportOutput):-
+    support_matrix(ApplySavingsSupportRollingClass, ApplySavingsSupportSavingsClass, ApplySavingsSupportType, ApplySavingsSupportValue),
+    applySupport(ApplySavingsSupportInput, ApplySavingsSupportType, ApplySavingsSupportValue, ApplySavingsSupportOutput).
 
 % === 6. Apply social standing based support ===
 socialCreds(Creds):- Creds = [('ChangedWorkcapacityCredential',nominal,10000)].
