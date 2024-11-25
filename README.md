@@ -31,7 +31,7 @@ or just run the `main.pl` script
 
 3. Compile the R1CS circuit, with witness generator 
     ```bash
-    circom --r1cs --wasm --c --sym --inspect code-generated.circom
+    circom --r1cs --wasm --c --sym --inspect generated.circom
     ```
 
 4. View information about the R1CS circuit
