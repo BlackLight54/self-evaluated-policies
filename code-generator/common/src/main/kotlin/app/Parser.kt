@@ -168,7 +168,8 @@ class Parser : prologBaseListener() {
      */
     override fun exitClause(ctx: prologParser.ClauseContext?) {
         ctx?.fact()?.let {
-            result.add(Clause(parseTerm(it.term()!!) as Predicate, listOf()))
+            val term = parseTerm(it.term()!!)
+            result.add(Clause(term as? Predicate ?: atomToZeroTermPredicate(term as Atom), listOf()))
 //            println("fact: ${it.term().text}")
         }
         ctx?.rule_()?.let { ruleContext ->
