@@ -13,8 +13,65 @@ or just run the `main.pl` script
 ./policies/prolog/main.pl
 ```
 
-### Proof parser
+### Circom generator
+0. Install the dependencies
+    ```bash
+    npm install
+    ```
 
+1. Put the proof tree in the correct spot
+    ```bash
+    ./policies/prolog/main.pl > tree.json
+    ```
+
+2. Run the java program to generate the circom code and the input file
+    ```bash
+    ./code-generator/gradlew app:run
+    ```
+
+3. Compile the R1CS circuit, with witness generator 
+    ```bash
+    circom --r1cs --wasm --c --sym --inspect code-generated.circom
+    ```
+
+4. View information about the R1CS circuit
+    ```bash
+    NODE_OPTIONS=--max_old_space_size=8192;snarkjs r1cs info generated.r1cs
+    ```
+    From this you can see the number of constrains and variables, which is useful for the next step. For the example policy, we had  1.327.402 constraints.
+    
+5. download the appropriate [powers of tau ceremony file](https://github.com/iden3/snarkjs?tab=readme-ov-file#7-prepare-phase-2)
+    ```bash
+    wget https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_21.ptau
+    ```
+6. (OPTIONAL) Calculate the witness    
+    ```bash
+    snarkjs wtns calculate generated_js/generated.wasm input_tree.json witness.wtns
+    ```
+   Optionally, you can check if it complies with the R1CS constraints
+    ```bash
+    snarkjs wtns check generated.r1cs witness.wtns    
+    ```
+7. Perform the trusted setup
+    ```bash
+   snarkjs plonk setup generated.r1cs powersOfTau28_hez_final_21.ptau circuit_final.zkey
+    ```
+   You can verify the zkey file with:
+    ```bash
+    snarkjs zkey verify generated.r1cs powersOfTau28_hez_final_21.ptau circuit_final.zkey
+    ```
+8. Export the verification key
+    ```bash
+    snarkjs zkey export verificationkey circuit_final.zkey verification_key.json
+    ```
+9. Generate the proof
+    ```bash
+    snarkjs plonk fullprove input_tree.json generated_js/generated.wasm circuit_final.zkey proof.json public.json
+    ```
+10. Verify the proof
+    ```bash
+    snarkjs plonk verify verification_key.json public.json proof.json
+    ```
 
 ## Meta-interpreter
 Sources: 
