@@ -1,0 +1,21 @@
+{
+  "name": "prover-ts",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node -r @swc-node/register index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@swc-node/register": "^1.10.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "tau-prolog": "^0.3.4"
+  }
+}

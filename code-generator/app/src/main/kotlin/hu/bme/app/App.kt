@@ -7,12 +7,9 @@ import app.model.ResolutionTree
 import java.io.File
 import java.util.*
 
-const val maxPredicateSize = 15;
-val ARITHMETIC_OPERATIONS = listOf("is", "=", "<", ">");
-const val DEBUGGING = true;
-fun addGoalHeader() {
-
-}
+const val maxPredicateSize = 15
+val ARITHMETIC_OPERATIONS = listOf("is", "=", "<", ">", "+", "-", "*", "/", "div")
+const val DEBUGGING = true
 
 
 private const val policyFile = "../../policies/prolog/policy.pl"
@@ -23,6 +20,7 @@ private const val proofTreeJsonFile = "../../tree.json"
 private const val templateFile = "../template.circom"
 private const val circomFileLocation = "../../generated.circom"
 private const val circuitInputFile = "../../input_tree.json"
+private const val maxDepth = 4
 
 fun main() {
     val policyPrologProgram = File(policyFile).readText()
@@ -30,128 +28,309 @@ fun main() {
     val policyInputExamplePrologProgram = File(policyInputFile).readText()
     val prologProgram = policyPrologProgram + policyMatrixPrologProgram + policyInputExamplePrologProgram
     val clauses = Parser.parseProlog(prologProgram)
-    //clauses.forEach { println(it) }
-    val mapping = createMapping(clauses)
-
-    mapping.forEach { (name, index) ->
-        println("$name: $index")
+    val mapping = createMapping(clauses).also {
+        println("Mapping:")
+        it.toList().sortedBy {
+            it.second
+        }.forEach { (name, index) -> println("$name: $index") }
     }
-    println("Knowledge base:")
-    clauses
-        .filter { it.body.isEmpty() }
-        .forEach { clause ->
-            println(clause.head.encode(mapping))
+
+
+    val knowledgeBase = clauses.filter { it.body.isEmpty() }.also {
+        println("Knowledge base:")
+        it.forEach { println(it.head.encode(mapping)) }
+    }
+
+    val rules = clauses.filter { it.body.isNotEmpty() }.groupBy { it.head.name }.also {
+        println("Rules:")
+        it.forEach { (name, rules) ->
+            println("$name:")
+            rules.forEach { rule ->
+                println(
+                    buildString {
+                        append(rule.body.joinToString(" & ") { it.encode(mapping).toString() })
+                        append(" => ")
+                        append(rule.head.encode(mapping))
+                    })
+            }
         }
-    val knowledgeBase = clauses.filter { it.body.isEmpty() }
-    println("Rules:")
-    val rules = clauses.filter { it.body.isNotEmpty() }.groupBy { it.head.name }
-    rules.forEach { (name, rules) ->
-        println("$name:")
-        rules.forEach { rule ->
-            println(
-                "  ${
-                    rule.body.joinToString(" & ") {
-                        it.encode(mapping).toString()
-                    }
-                } => ${rule.head.encode(mapping)}"
+    }
+    val bucketVariables = findArrayPredicateVariables(rules).also {
+        println("Bucket variables:")
+        it.forEach { (name, size) -> println("$name: $size") }
+    }
+    val maxBucketElementSize = findArrayTermMaxSize(rules).also {
+        println("Bucket max size: $it")
+    }
+    val maxPredicateLength = rules.maxOf { it.value[0].body.maxOf { it.terms.size } } + 1
+
+    val goalTemplatesCircom = buildString {
+        rules.forEach { (name, ruleClauses) ->
+            appendLine(
+                generateGoalTemplate(
+                    rule_clauses = ruleClauses,
+                    name = name,
+                    clauses = clauses,
+                    mapping = mapping,
+                    knowledgeBase = knowledgeBase,
+                    maxPredicateLength = maxPredicateLength
+                )
             )
         }
     }
 
+    val mappingCircom = buildString {
+        clauses.groupBy { it.head.name }.forEach { (name, _) ->
+            appendLine("\tvar ${name} = ${mapping[name]};")
+        }
+        appendLine("\tvar true = ${mapping["true"]};")
+    }
 
-    val bucketVariables = findArrayPredicateVariables(rules)
-    val maxBucketElementSize = findArrayTermMaxSize(rules)
-    println("Bucket max size: $maxBucketElementSize")
+    val ruleCallsCircom = buildString {
+        rules.forEach { (name, rules) ->
+            appendLine("\tcomponent ${name}Goal = Goal${name.replaceFirstChar { it.titlecase() }}();")
+        }
+        val knowledgeBaseGrouped = knowledgeBase.groupBy { it.head.name }.also { knowledgeAble ->
+            // TODO: Why separate the singular case?
+            if (knowledgeAble.size == 1) {
+                appendLine("\tcomponent knowledge = KnowledgeChecker();")
+            } else {
+                appendLine("\tcomponent knowledge[${knowledgeAble.size}];")
+                appendLine("\tfor (var i = 0; i < ${knowledgeAble.size}; i++) {")
+                appendLine("\t\tknowledge[i] = KnowledgeChecker();")
+                appendLine("\t}")
+            }
+        }
+        val arithmetics = ARITHMETIC_OPERATIONS.filter { mapping.contains(it) }
+        val elementCount = rules.size + knowledgeBaseGrouped.size + 2 + arithmetics.size
+        appendLine("\tsignal result[${elementCount}];")
+        appendLine("\tsignal ruleSelector[${elementCount}];")
+        var ruleIndex = 0
+        rules.forEach { (name, rule_clauses) ->
+            val maxUniBody = rule_clauses.maxOf { it.body.size }
+            appendLine("\truleSelector[${ruleIndex}] <== IsEqual()([goal_args[0], ${name}]);")
+            appendLine("\t${name}Goal.goal_args <== goal_args;")
+            for (i in 0..<maxUniBody) {
+                appendLine("\t${name}Goal.unified_body[${i}] <== unified_body[${i}];")
+            }
+            if (ruleIndex == 0) {
+                appendLine("\tresult[0] <== ${name}Goal.c*ruleSelector[0];")
+            } else {
+                appendLine("\tresult[$ruleIndex] <== ${name}Goal.c*ruleSelector[$ruleIndex] + result[${ruleIndex - 1}];")
+            }
+            ruleIndex++
+        }
+        var knowledgeUsageCounter = 0
+        knowledgeBaseGrouped.forEach { (name, rules) ->
+            if (knowledgeBaseGrouped.size == 1) {
+                appendLine("\truleSelector[${ruleIndex}] <== IsEqual()([goal_args[0], ${name}]);")
+                appendLine("\tknowledge.a <== goal_args;")
+                if (ruleIndex == 0) {
+                    appendLine("\t\tresult[0] <== knowledge.c*ruleSelector[0];")
+                } else {
+                    appendLine("\t\tresult[$ruleIndex] <== knowledge.c*ruleSelector[$ruleIndex] + result[${ruleIndex - 1}];")
+                }
+            } else {
+                appendLine("\truleSelector[${ruleIndex}] <== IsEqual()([goal_args[0], ${name}]);")
+                appendLine("\tknowledge[$knowledgeUsageCounter].a <== goal_args;")
+                if (ruleIndex == 0) {
+                    appendLine("\tresult[0] <== knowledge[$knowledgeUsageCounter].c*ruleSelector[0];")
+                } else {
+                    appendLine("\tresult[$ruleIndex] <== knowledge[$knowledgeUsageCounter].c*ruleSelector[$ruleIndex] + result[${ruleIndex - 1}];")
+                }
+                knowledgeUsageCounter++
+            }
+            ruleIndex++
+        }
 
-    val generated_rule_code = StringBuilder()
-    val maxPerdicateLength = rules.maxOf { it.value[0].body.maxOf { it.terms.size } } + 1
-    rules.forEach { (name, rule_clauses) ->
-        // Find matching terms in the body and the head of the rules
-        // For example, if we have the following rule:
-        // ancestor(X, Y) :- parent(X, Y).
-        // Then the matching terms are:
-        // X: goal first argument and first rule first argument
-        // Y: goal second argument and first rule second argument
-        // We need to find the matching terms because we need to unify them
-
-        // Find matching terms in the body of the rules
-
-        val resultsLine = "\tsignal result[${rule_clauses.size}];\n"
+        arithmetics.forEach {
+            appendLine("\truleSelector[${ruleIndex}] <== IsEqual()([goal_args[0], ${mapping[it]}]);")
+            appendLine("\tresult[$ruleIndex] <== ruleSelector[$ruleIndex] + result[${ruleIndex - 1}];")
+            ruleIndex++
+        }
+    }
 
 
-        val maxUniBody = rule_clauses.maxOf { it.body.size }
-        generated_rule_code.appendLine(
+    val branchingFactor = 13//rules.maxOf { it.value[0].body.size }
+
+    val transitionConstraints = buildString {
+        clauses.groupBy { it.head.name }.forEach { (name, clauses) ->
+
+            var prefix = ""
+            val prevBodyChecks = buildString {
+                clauses.forEach { clause ->
+                    var innerPrefix = ""
+                    append(prefix)
+                    clause.body.forEachIndexed { index, predicate ->
+                        append(
+                            "${innerPrefix}prevUnifiedBodies[${index}][0] == ${
+                                if (Parser.SPECIAL_TERMS.any {
+                                        predicate.name.contains(it)
+                                    }.not() && Parser.OPERATORS.any {
+                                        predicate.name.contains(it)
+                                    }
+                                        .not()) predicate.name else if (predicate.name == "=") mapping["true"] else mapping[predicate.name]
+                            }")
+                        innerPrefix = " && "
+                    }
+                    if (clause.body.isEmpty()) innerPrefix = ""
+                    for (i in clause.body.size until branchingFactor) {
+                        append("${innerPrefix}prevUnifiedBodies[${i}][0] == 0")
+                        innerPrefix = " && "
+                    }
+                    prefix = " || "
+                }
+            }
+            appendLine(
+                "\tif(currentGoal[0] == $name) {\n" + "\t\tif ( $prevBodyChecks ) {\n" + "\t\t\tresult = 1;\n" + "\t\t}\n" + "\t}"
+            )
+
+        }
+    }
+
+
+
+    // Padded knowledge base. Each element in the knowledge base shall have a uniform length
+    // Specifically, the length of the element with the longest length
+    val knowLedgeBasePadded = knowledgeBase.map { clause ->
+        val padded = clause.head.encode(mapping).toMutableList()
+        while (padded.size < maxPredicateLength) {
+            padded.add(0)
+        }
+        padded
+    }
+
+    val bucketSize: Int = bucketVariables.values.sum()
+
+
+    val template = File(templateFile).readText()
+    val generatedCode = template.replace("REPLACE_RULE_TEMPLATES", goalTemplatesCircom.toString())
+        .replace("REPLACE_PREDICATE_MAPPINGS", mappingCircom).replace("REPLACE_RULE_CALLS", ruleCallsCircom)
+        .replace("REPLACE_KNOWLEDGE_BASE_LEN", knowledgeBase.size.toString())
+        .replace("REPLACE_KNOWLEDGE_BASE_ARRAY", knowLedgeBasePadded.joinToString(",") { it.toString() })
+        .replace("REPLACE_TRANSITION_RULES", transitionConstraints).replace("REPLACE_MAX_DEPTH", maxDepth.toString())
+        .replace("REPLACE_BRANCH_FACTOR", branchingFactor.toString()).replace("MAX_BODY_SIZE", "$maxPredicateLength")
+        .replace("SUCH_EMPTY", IntArray(maxPredicateLength).joinToString(",") { "0" })
+        .replace("MAX_BUCKET_SIZE", bucketSize.toString())
+        .replace("MAX_BUCKET_ELEMENT_SIZE", maxBucketElementSize.toString())
+        .replace("REPLACE_RULE_COUNT", (rules.size + knowledgeBase.groupBy { it.head.name }.size + 2).toString())
+        .replace("ARITMETHICS_COUNT", ARITHMETIC_OPERATIONS.filter { mapping.contains(it) }.size.toString())
+
+    File(circomFileLocation).writeText(generatedCode)
+
+    mapping.forEach { (name, index) ->
+        println("'$name': $index,")
+    }
+
+    val treeJsonText = File(proofTreeJsonFile).readText()
+    var tree = ResolutionTree.parseJson(treeJsonText, mapping)
+    val maxUniBody = rules.maxOf { it.value.maxOf { it.body.size } }
+    tree = tree.standardize(unificationCount_input = branchingFactor, max_elements = maxPredicateLength);
+    File(circuitInputFile).writeText(tree.toBFSJson(bucketSize = bucketSize))
+}
+
+private fun generateGoalTemplate(
+    rule_clauses: List<Clause>,
+    name: String,
+    clauses: MutableList<Clause>,
+    maxPredicateLength: Int,
+    mapping: Map<String, Int>,
+    knowledgeBase: List<Clause>
+): String {
+    // Find matching terms in the body and the head of the rules
+    // For example, if we have the following rule:
+    // ancestor(X, Y) :- parent(X, Y).
+    // Then the matching terms are:
+    // X: goal first argument and first rule first argument
+    // Y: goal second argument and first rule second argument
+    // We need to find the matching terms because we need to unify them
+
+    // Find matching terms in the body of the rules
+
+    val goalTemplateCircom = StringBuilder()
+
+
+    val resultsLine = "\tsignal result[${rule_clauses.size}];\n"
+
+    fun addGoalHeader(
+        name: String, maxUniBody: Int, maxPerdicateLength: Int, stringBuilder: StringBuilder
+    ) {
+        stringBuilder.append("template Goal${name.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }}()")
+        stringBuilder.appendLine("{")
+        stringBuilder.appendLine(
             buildString {
-                addGoalHeader(name, maxUniBody, maxPerdicateLength, this)
-                clauses.groupBy { it.head.name }.forEach { (name, _) ->
-                    appendLine("\tvar ${name} = ${mapping[name]};")
+                appendLine("\tsignal input unified_body[${maxUniBody}][$maxPerdicateLength];")
+                appendLine("\tsignal input goal_args[$maxPerdicateLength];")
+                appendLine("\tsignal output c;")
+                appendLine("\tvar none = 0;")
+            })
+    }
+
+    val maxUniBody = rule_clauses.maxOf { it.body.size }
+    goalTemplateCircom.append(
+        buildString {
+            addGoalHeader(name, maxUniBody, maxPredicateLength, this)
+            clauses.groupBy { it.head.name }
+                .forEach { (name, _) -> appendLine("\tvar ${name} = ${mapping[name]};") }
+            //appendLine("\n\tgoal_args[0] === ${name};")
+
+            // Number of times we will name to check the knowledge base
+            val knowledgeBaseUsage = initializeKnowledgeChecker(rule_clauses, knowledgeBase, this)
+            val maxBodySize = rule_clauses.maxOf { it.body.size };
+
+            appendLine("\tsignal ruleSelector[${rule_clauses.size}];")
+            appendLine("\tsignal ruleSelector_intermediate[${rule_clauses.size}][${maxBodySize}];")
+
+            var knowledgeUsageCounter = 0
+            generateRuleSelectors(rule_clauses, mapping, maxBodySize, knowledgeUsageCounter, this)
+
+            val extraConstraintsCount = arrayConstraintCount(rule_clauses)
+            generateConstraints(rule_clauses, this, extraConstraintsCount)
+
+            rule_clauses.forEachIndexed { ind, rule ->
+                if (rule.body.any { it.hasAritmetic() }) {
+                    appendLine(clauseGenerateArithmeticsCheck(rule, ind))
                 }
-                //appendLine("\n\tgoal_args[0] === ${name};")
-                // Number of times we will name to check the knowledge base
-                val knowledgeBaseUsage = initializeKnowledgeChecker(rule_clauses, knowledgeBase, this)
-                val maxBodySize = rule_clauses.maxOf { it.body.size };
-
-                appendLine("\tsignal ruleSelector[${rule_clauses.size}];")
-                appendLine("\tsignal ruleSelector_intermediate[${rule_clauses.size}][${maxBodySize}];")
-
-                var knowledgeUsageCounter = 0
-                generateRuleSelectors(
-                    rule_clauses,
-                    mapping,
-                    maxBodySize,
-                    knowledgeUsageCounter,
-                    this
-                )
-
-
-                val extraConstraintsCount = arrayConstraintCount(rule_clauses)
-                generateConstraints(rule_clauses, this, extraConstraintsCount)
-
-                rule_clauses.forEachIndexed { ind, rule ->
-                    if (rule.body.any { it.hasAritmetic() }) {
-                        appendLine(clauseGenerateArithmeticsCheck(rule, ind))
-                    }
-                    val knowledgeBody =
-                        knowledgeBase.groupBy { it.head.name }.count { rule.body.map { it.name }.contains(it.key) }
-                    if (rule.body.size == knowledgeBody) {
-                        if (knowledgeBaseUsage == 1) {
-                            appendLine("\t\tknowledge.a <-- unified_body[0];")
-                            appendLine("\t\tresult = knowledge.c;")
-                        } else {
-                            appendLine("\tresult = 1;")
-                            rule.body.forEachIndexed { index, predicate ->
-                                appendLine("\tknowledge[$knowledgeUsageCounter].a <-- unified_body[$index];")
-                                appendLine("\tresult = result && knowledge[$knowledgeUsageCounter].c;")
-                                knowledgeUsageCounter++
-                            }
-                        }
-                    } else if (rule.body[0].name == "=") {
-
+                val knowledgeBody =
+                    knowledgeBase.groupBy { it.head.name }.count { rule.body.map { it.name }.contains(it.key) }
+                if (rule.body.size == knowledgeBody) {
+                    if (knowledgeBaseUsage == 1) {
+                        appendLine("\t\tknowledge.a <-- unified_body[0];")
+                        appendLine("\t\tresult = knowledge.c;")
                     } else {
-                        //appendLine(constraints[ind])
+                        appendLine("\tresult = 1;")
+                        rule.body.forEachIndexed { index, predicate ->
+                            appendLine("\tknowledge[$knowledgeUsageCounter].a <-- unified_body[$index];")
+                            appendLine("\tresult = result && knowledge[$knowledgeUsageCounter].c;")
+                            knowledgeUsageCounter++
+                        }
                     }
+                } else if (rule.body[0].name == "=") {
+
+                } else {
+                    //appendLine(constraints[ind])
                 }
-                var extraConstraintIndex = 0
-                // Empty Array check
-                if (rule_clauses.any { it.head.hasArray() }) {
-                    appendLine("// Empty array check")
-                    val arrayPositions = rule_clauses.map { clause ->
-                        clause.head.terms.mapIndexed { index, term ->
-                            if (term is Predicate && term.name == "[]") {
-                                index
-                            } else {
-                                -1
-                            }
-                        }.filter { it != -1 }
-                    }
-                    arrayPositions[0].forEach {
-                        appendLine("\tcomponent constraint${extraConstraintIndex} = IsEqual();")
-                        appendLine("\tconstraint${extraConstraintIndex}.in[0] <== goal_args[${it + 1}];")
-                        appendLine("\tconstraint${extraConstraintIndex}.in[1] <== ${mapping["[]"]};")
-                        appendLine("\tresult[${rule_clauses.size + extraConstraintIndex}] <== constraint${extraConstraintIndex}.out + result[${rule_clauses.size + extraConstraintIndex - 1}];")
-                        extraConstraintIndex++
-                    }
-                    /* val arrayPositions = rule_clauses.map { clause ->
+            }
+            var extraConstraintIndex = 0
+            // Empty Array check
+            if (rule_clauses.any { it.head.hasArray() }) {
+                appendLine("// Empty array check")
+                val arrayPositions = rule_clauses.map { clause ->
+                    clause.head.terms.mapIndexed { index, term ->
+                        if (term is Predicate && term.name == "[]") {
+                            index
+                        } else {
+                            -1
+                        }
+                    }.filter { it != -1 }
+                }
+                arrayPositions[0].forEach {
+                    appendLine("\tcomponent constraint${extraConstraintIndex} = IsEqual();")
+                    appendLine("\tconstraint${extraConstraintIndex}.in[0] <== goal_args[${it + 1}];")
+                    appendLine("\tconstraint${extraConstraintIndex}.in[1] <== ${mapping["[]"]};")
+                    appendLine("\tresult[${rule_clauses.size + extraConstraintIndex}] <== constraint${extraConstraintIndex}.out + result[${rule_clauses.size + extraConstraintIndex - 1}];")
+                    extraConstraintIndex++
+                }/* val arrayPositions = rule_clauses.map { clause ->
                          clause.head.terms.mapIndexed { index, term ->
                              if (term is Predicate && term.name == "[]") {
                                  index
@@ -172,205 +351,29 @@ fun main() {
                      append("\t}")*/
 
 
-                }
-                val extraConstraintCountIfNeeded = if (rule_clauses.any { it.head.hasArray() }) 1 else 0
-                appendLine("\tsignal finalResult;")
-                appendLine("\tfinalResult <== GreaterEqThan(8)([result[${rule_clauses.size + extraConstraintCountIfNeeded - 1}], 1]);")
-                if (DEBUGGING) {
-                    appendLine("\tif(finalResult != 1 && goal_args[0] == $name) {")
-                    appendLine("\t\tlog(\"${name} failed\");")
-                    IntArray(rule_clauses.size + extraConstraintCountIfNeeded) { it }.forEachIndexed { index, it ->
-                        appendLine("\t\tlog(\"Result[${index}] failed: \", result[${it}]);")
-                    }
-                    appendLine("\t} else {")
-                    appendLine("\t\tlog(\"${name} succeeded\");")
-                    appendLine("\t}")
-                }
-                appendLine("\n\tc <== finalResult;")
-
-                appendLine("}")
             }
-        )
-
-    } // rules.forEach
-    val mapping_code = buildString {
-        clauses.groupBy { it.head.name }.forEach { (name, _) ->
-            appendLine("\tvar ${name} = ${mapping[name]};")
-        }
-        appendLine("\tvar true = ${mapping["true"]};")
-    }
-
-    val rule_calls = buildString {
-        rules.forEach { (name, rules) ->
-            appendLine(
-                "\tcomponent ${name}Goal = Goal${
-                    name.replaceFirstChar {
-                        if (it.isLowerCase()) it.titlecase(
-                            Locale.getDefault()
-                        ) else it.toString()
-                    }
-                }();"
-            )
-        }
-        val knowledgeAble = knowledgeBase.groupBy { it.head.name }
-        if (knowledgeAble.size == 1) {
-            appendLine("\tcomponent knowledge = KnowledgeChecker();")
-        } else if (knowledgeAble.size > 1) {
-            appendLine("\tcomponent knowledge[${knowledgeAble.size}];")
-            appendLine("\tfor (var i = 0; i < ${knowledgeAble.size}; i++) {")
-            appendLine("\t\tknowledge[i] = KnowledgeChecker();")
-            appendLine("\t}")
-        }
-        var knowledgeUsageCounter = 0
-        var rule_prefix = "\t"
-        val arithmetics = ARITHMETIC_OPERATIONS.filter { mapping.contains(it) }
-        val elementCount = rules.size + knowledgeAble.size + 2 + arithmetics.size
-        appendLine("\tsignal result[${elementCount}];")
-        appendLine("\tsignal ruleSelector[${elementCount}];")
-        var ruleIndex = 0
-        rules.forEach { (name, rule_clauses) ->
-            val maxUniBody = rule_clauses.maxOf { it.body.size }
-            appendLine("\truleSelector[${ruleIndex}] <== IsEqual()([goal_args[0], ${name}]);")
-            appendLine("\t${name}Goal.goal_args <== goal_args;")
-            for (i in 0..<maxUniBody) {
-                appendLine("\t${name}Goal.unified_body[${i}] <== unified_body[${i}];")
-            }
-            if (ruleIndex == 0) {
-                appendLine("\tresult[0] <== ${name}Goal.c*ruleSelector[0];")
-            } else {
-                appendLine("\tresult[$ruleIndex] <== ${name}Goal.c*ruleSelector[$ruleIndex] + result[${ruleIndex - 1}];")
-            }
-            ruleIndex++
-        }
-        knowledgeAble.forEach { (name, rules) ->
-            if (knowledgeAble.size == 1) {
-                appendLine("\truleSelector[${ruleIndex}] <== IsEqual()([goal_args[0], ${name}]);")
-                appendLine("\tknowledge.a <== goal_args;")
-                if (ruleIndex == 0) {
-                    appendLine("\t\tresult[0] <== knowledge.c*ruleSelector[0];")
-                } else {
-                    appendLine("\t\tresult[$ruleIndex] <== knowledge.c*ruleSelector[$ruleIndex] + result[${ruleIndex - 1}];")
+            val extraConstraintCountIfNeeded = if (rule_clauses.any { it.head.hasArray() }) 1 else 0
+            appendLine("\tsignal finalResult;")
+            appendLine("\tfinalResult <== GreaterEqThan(8)([result[${rule_clauses.size + extraConstraintCountIfNeeded - 1}], 1]);")
+            if (DEBUGGING) {
+                appendLine("\tif(finalResult != 1 && goal_args[0] == $name) {")
+                appendLine("\t\tlog(\"${name} failed\");")
+                IntArray(rule_clauses.size + extraConstraintCountIfNeeded) { it }.forEachIndexed { index, it ->
+                    appendLine("\t\tlog(\"Result[${index}] failed: \", result[${it}]);")
                 }
-            } else {
-
-                appendLine("\truleSelector[${ruleIndex}] <== IsEqual()([goal_args[0], ${name}]);")
-                appendLine("\tknowledge[$knowledgeUsageCounter].a <== goal_args;")
-                if (ruleIndex == 0) {
-                    appendLine("\tresult[0] <== knowledge[$knowledgeUsageCounter].c*ruleSelector[0];")
-                } else {
-                    appendLine("\tresult[$ruleIndex] <== knowledge[$knowledgeUsageCounter].c*ruleSelector[$ruleIndex] + result[${ruleIndex - 1}];")
-                }
-                knowledgeUsageCounter++
-
+                appendLine("\t} else {")
+                appendLine("\t\tlog(\"${name} succeeded\");")
+                appendLine("\t}")
             }
-            ruleIndex++
-        }
+            appendLine("\n\tc <== finalResult;")
 
-        arithmetics.forEach {
-            appendLine("\truleSelector[${ruleIndex}] <== IsEqual()([goal_args[0], ${mapping[it]}]);")
-            appendLine("\tresult[$ruleIndex] <== ruleSelector[$ruleIndex] + result[${ruleIndex - 1}];")
-            ruleIndex++
-        }
-    }
-    val branchingFactor = 13//rules.maxOf { it.value[0].body.size }
-
-
-    val transition_constraints = buildString {
-        clauses.groupBy { it.head.name }.forEach { (name, clauses) ->
-
-            var prefix = ""
-            val prevBodyChecks = buildString {
-                clauses.forEach { clause ->
-                    var innerPrefix = ""
-                    append(prefix)
-                    clause.body.forEachIndexed { index, predicate ->
-                        append(
-                            "${innerPrefix}prevUnifiedBodies[${index}][0] == ${
-                                if (
-                                    Parser.SPECIAL_TERMS.any {
-                                        predicate.name.contains(it)
-                                    }.not() &&
-                                    Parser.OPERATORS.any {
-                                        predicate.name.contains(it)
-                                    }.not()
-                                )
-                                    predicate.name else if (predicate.name == "=") mapping["true"] else mapping[predicate.name]
-                            }"
-                        )
-                        innerPrefix = " && "
-                    }
-                    if (clause.body.isEmpty())
-                        innerPrefix = ""
-                    for (i in clause.body.size until branchingFactor) {
-                        append("${innerPrefix}prevUnifiedBodies[${i}][0] == 0")
-                        innerPrefix = " && "
-                    }
-                    prefix = " || "
-                }
-            }
-            appendLine(
-                "\tif(currentGoal[0] == $name) {\n"
-                        + "\t\tif ( $prevBodyChecks ) {\n"
-                        + "\t\t\tresult = 1;\n"
-                        + "\t\t}\n"
-                        + "\t}"
-            )
-
-        }
-    }
-
-    val maxDepth = 4;
-
-
-    val template = File(templateFile).readText()
-
-    // Padded knowledge base. Each element in the knowledge base shall have a uniform length
-    // Specifically, the length of the element with the longest length
-    val knowLedgeBasePadded = knowledgeBase.map { clause ->
-        val padded = clause.head.encode(mapping).toMutableList()
-        while (padded.size < maxPerdicateLength) {
-            padded.add(0)
-        }
-        padded
-    }
-
-    val bucketSize: Int = bucketVariables.values.sum()
-
-
-    val generatedCode = template
-        .replace("REPLACE_RULE_TEMPLATES", generated_rule_code.toString())
-        .replace("REPLACE_PREDICATE_MAPPINGS", mapping_code)
-        .replace("REPLACE_RULE_CALLS", rule_calls)
-        .replace("REPLACE_KNOWLEDGE_BASE_LEN", knowledgeBase.size.toString())
-        .replace("REPLACE_KNOWLEDGE_BASE_ARRAY", knowLedgeBasePadded.joinToString(",") { it.toString() })
-        .replace("REPLACE_TRANSITION_RULES", transition_constraints)
-        .replace("REPLACE_MAX_DEPTH", maxDepth.toString())
-        .replace("REPLACE_BRANCH_FACTOR", branchingFactor.toString())
-        .replace("MAX_BODY_SIZE", "$maxPerdicateLength")
-        .replace("SUCH_EMPTY", IntArray(maxPerdicateLength).joinToString(",") { "0" })
-        .replace("MAX_BUCKET_SIZE", bucketSize.toString())
-        .replace("MAX_BUCKET_ELEMENT_SIZE", maxBucketElementSize.toString())
-        .replace("REPLACE_RULE_COUNT", (rules.size + knowledgeBase.groupBy { it.head.name }.size + 2).toString())
-        .replace("ARITMETHICS_COUNT", ARITHMETIC_OPERATIONS.filter { mapping.contains(it) }.size.toString())
-
-    File(circomFileLocation).writeText(generatedCode)
-
-    mapping.forEach { (name, index) ->
-        println("'$name': $index,")
-    }
-
-    val treeJsonText = File(proofTreeJsonFile).readText()
-    var tree = ResolutionTree.parseJson(treeJsonText, mapping)
-    val maxUniBody = rules.maxOf { it.value.maxOf { it.body.size } }
-    //println(tree.getMaxDepth())
-    tree = tree.standardize(unificationCount_input = branchingFactor, max_elements = maxPerdicateLength);
-    File(circuitInputFile).writeText(tree.toBFSJson(bucketSize = bucketSize))
+            appendLine("}")
+        })
+    return goalTemplateCircom.toString()
 }
 
 private fun generateConstraints(
-    rule_clauses: List<Clause>,
-    stringBuilder: StringBuilder,
-    additionalConstraintCount: Int = 0
+    rule_clauses: List<Clause>, stringBuilder: StringBuilder, additionalConstraintCount: Int = 0
 ) {
 
     stringBuilder.appendLine("\tsignal result[${rule_clauses.size + additionalConstraintCount}];")
@@ -513,8 +516,7 @@ private fun getArgumentPositions(rule: Clause): Pair<MutableMap<String, MutableL
                 }
                 termPositions[term.name]!!.add(
                     Pair(
-                        bodyIndex,
-                        termIndex
+                        bodyIndex, termIndex
                     )
                 )
             }
@@ -533,14 +535,12 @@ private fun generateRuleSelectors(
     var knowledgeUsageCounter1 = knowledgeUsageCounter
     rule_clauses.forEachIndexed { ind, rule ->
         rule.body.forEachIndexed { index, predicate ->
-            val predicateEncodedName = if (
-                Parser.SPECIAL_TERMS.any {
+            val predicateEncodedName = if (Parser.SPECIAL_TERMS.any {
                     predicate.name.contains(it)
-                }.not() &&
-                Parser.OPERATORS.any {
+                }.not() && Parser.OPERATORS.any {
                     predicate.name.contains(it)
-                }.not()
-            ) predicate.name else if (predicate.name == "=" && predicate.terms[1].name == "[]") mapping["true"] else mapping[predicate.name]
+                }
+                    .not()) predicate.name else if (predicate.name == "=" && predicate.terms[1].name == "[]") mapping["true"] else mapping[predicate.name]
             if (index == 0) {
                 stringBuilder.appendLine("\truleSelector_intermediate[${ind}][${index}] <== IsEqual()([unified_body[$index][0], ${predicateEncodedName}]);")
             } else {
@@ -565,13 +565,10 @@ private fun generateRuleSelectors(
 }
 
 private fun initializeKnowledgeChecker(
-    rule_clauses: List<Clause>,
-    knowledgeBase: List<Clause>,
-    stringBuilder: StringBuilder
+    rule_clauses: List<Clause>, knowledgeBase: List<Clause>, stringBuilder: StringBuilder
 ): Int {
     val knowledgeBaseUsage = rule_clauses.filter { rule ->
-        rule.body.size == knowledgeBase.groupBy { it.head.name }
-            .count { rule.body.map { it.name }.contains(it.key) }
+        rule.body.size == knowledgeBase.groupBy { it.head.name }.count { rule.body.map { it.name }.contains(it.key) }
     }.sumOf { rule -> rule.body.size }
     if (knowledgeBaseUsage == 1) {
         stringBuilder.appendLine("\tcomponent knowledge = KnowledgeChecker();")
@@ -584,20 +581,6 @@ private fun initializeKnowledgeChecker(
     return knowledgeBaseUsage
 }
 
-private fun addGoalHeader(
-    name: String,
-    maxUniBody: Int,
-    maxPerdicateLength: Int,
-    stringBuilder: StringBuilder
-) {
-    stringBuilder.appendLine("template Goal${name.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }}() {")
-    stringBuilder.appendLine(
-        "\tsignal input unified_body[${maxUniBody}][$maxPerdicateLength];\n" +
-                "\tsignal input goal_args[$maxPerdicateLength];\n" +
-                "\tsignal output c;\n" +
-                "\tvar none = 0;"
-    )
-}
 
 /**
  * List the Array type terms in the prolog program
@@ -676,115 +659,88 @@ fun findArrayTermMaxSize(rules: Map<String, List<Clause>>): Int {
 
 
 fun clauseGenerateArithmeticsCheck(clause: Clause, index: Int): String {
-    // Generate the code to check aritmetics in a clause
     val arithmeticPredicates = clause.body.filter { it.hasAritmetic() }
-    val asserts = buildList {
-        arithmeticPredicates.forEach { predicate ->
-            add(predicateToString(predicate, clause.body.indexOf(predicate)))
-        }
-    }.map {
-         "${it.prefix}\n" +
-                "ruleSelector[$index]*(${it.infix}) === 0;\n" +
-                "${it.postfix}\n"
-    }
-
-    return buildString {
-        asserts.forEach {
-            appendLine(it)
+    val asserts = arithmeticPredicates.map { predicate ->
+        val predicateString = arithmeticToPredicateString(predicate, clause.body.indexOf(predicate))
+        buildString {
+            appendLine(predicateString.prefix)
+            appendLine("\truleSelector[$index]*(${predicateString.infix}) === 0;")
+            appendLine(predicateString.postfix)
         }
     }
+    return buildString { asserts.forEach { appendLine(it) } }
 }
 
 data class PredArithConstr(val infix: String, val prefix: String = "", val postfix: String = "") {}
 
-fun predicateToString(predicate: Predicate, unificationIndex: Int, termIndexStart: Int = 0): PredArithConstr {
+fun arithmeticToPredicateString(predicate: Predicate, unificationIndex: Int, termIndexStart: Int = 0): PredArithConstr {
     // Helper function to handle the transformation
     fun termToString(term: Term): PredArithConstr = when {
         term.name.isInt() -> PredArithConstr(term.name)
-        term is Variable -> PredArithConstr("unified_body[$unificationIndex][${predicate.terms.indexOf(term) + 1 + termIndexStart}]")
-        term is Predicate -> predicateToString(
+        term is Variable -> PredArithConstr(
+            // TODO: Because we get vars based on search, the variable names must be unique
+            "unified_body[$unificationIndex][${predicate.terms.indexOf(term) + 1 + termIndexStart}]/*var:${term.name}*/"
+        )
+
+        term is Predicate -> arithmeticToPredicateString(
             term,
             unificationIndex,
-            predicate.terms.filter { (it is Predicate).not() }.size + termIndexStart
-        )
+            predicate.terms.count { it !is Predicate } + termIndexStart)
 
         else -> throw IllegalArgumentException("Unsupported term type")
     }
 
+    val lterm = predicate.terms[0]
+    val rterm = predicate.terms[1]
+    val lConstr = termToString(lterm)
+    val rConstr = termToString(rterm)
+    var prefix = lConstr.prefix + "\n" + rConstr.prefix
+    var postfix = lConstr.postfix + "\n" + rConstr.postfix
     return when (predicate.name) {
         "is" -> {
-            val rterm = predicate.terms[1]
-            val lConstr = termToString(predicate.terms[0])
-            val rConstr = termToString(predicate.terms[1])
-            val prefix = lConstr.prefix + "\n" + rConstr.prefix
-            val postfix = lConstr.postfix + "\n" + rConstr.postfix
-            if (
-                rterm is Predicate && rterm.name == "+" ||
-                rterm is Predicate && rterm.name == "-" ||
-                rterm is Predicate && rterm.name == "/" ||
-                rterm is Predicate && rterm.name == "div" ||
-                rterm is Predicate && rterm.name == "*"
-            ) {
-                PredArithConstr("${lConstr.infix} - (${rConstr.infix})", prefix, postfix)
-            } else {
-                PredArithConstr("${lConstr.infix} == ${rConstr.infix}", prefix, postfix)
+            val infix = when (predicate.terms[1].let { it as? Predicate }?.name) {
+                "+", "/", "*", "-", "div" -> "(${lConstr.infix}) - (${rConstr.infix})/*op:is:1*/"
+                else -> "${lConstr.infix} == ${rConstr.infix}/*op:is*/"
             }
+            PredArithConstr(infix, prefix, postfix)
         }
 
         "/" -> {
-            val numerator = termToString(predicate.terms[0])
-            val denominator = termToString(predicate.terms[1])
-
-            val prefix = numerator.prefix + "\n" + denominator.prefix
-            val infix = "(${numerator.infix} / ${denominator.infix})"
-            val postfix = numerator.postfix + "\n" + denominator.postfix
+            val infix = "(${lConstr.infix} / ${rConstr.infix})/*op:/ */"
             PredArithConstr(infix, prefix, postfix)
         }
 
         "div" -> {
-            val numerator = termToString(predicate.terms[0])
-            val denominator = termToString(predicate.terms[1])
+            prefix += buildString {
+                appendLine("signal intDivRes$termIndexStart;")
+                appendLine("intDivRes$termIndexStart <-- ${lConstr.infix} \\ ${rConstr.infix};")
 
-            val prefix = numerator.prefix + "\n" + denominator.prefix
-            val infix = "(${numerator.infix} / ${denominator.infix})"
-            val postfix = numerator.postfix + "\n" + denominator.postfix
+                appendLine("signal intDivRem$termIndexStart;")
+                appendLine("intDivRem$termIndexStart <-- ${lConstr.infix} % ${rConstr.infix};")
+
+                appendLine("intDivRes$termIndexStart * ${rConstr.infix} + intDivRem$termIndexStart=== ${lConstr.infix};")
+            }
+            val infix = "intDivRes$termIndexStart/* op:div */"
             PredArithConstr(infix, prefix, postfix)
         }
 
         "-" -> {
-//            PredArithConstr("${termToString(predicate.terms[0])} + ${termToString(predicate.terms[1])}")
-            val leftTerm = termToString(predicate.terms[0])
-            val rightTerm = termToString(predicate.terms[1])
-
-            val prefix = leftTerm.prefix + "\n" + rightTerm.prefix
-            val infix = "${leftTerm.infix} - ${rightTerm.infix}"
-            val postfix = leftTerm.postfix + "\n" + rightTerm.postfix
+            val infix = "(${lConstr.infix} + ${rConstr.infix})/* op:- */"
             PredArithConstr(infix, prefix, postfix)
         }
 
         "*" -> {
             // Check if any of the terms is a division
-            val leftTerm = termToString(predicate.terms[0])
-            val rightTerm = termToString(predicate.terms[1])
-
-            val prefix =
-                "signal temp$termIndexStart;\n" +
-                        "temp$termIndexStart <== ${leftTerm.infix} * ${rightTerm.infix};\n" +
-                        "${leftTerm.prefix}\n" +
-                        "${rightTerm.prefix}\n"
-            val infix = "temp$termIndexStart"
-            val postfix = leftTerm.postfix + "\n" + rightTerm.postfix
+            prefix += buildString {
+                appendLine("signal prodRes$termIndexStart;")
+                appendLine("prodRes$termIndexStart <== ${lConstr.infix} * ${rConstr.infix};")
+            }
+            val infix = "prodRes$termIndexStart /* op:* */"
             PredArithConstr(infix, prefix, postfix)
         }
 
         else -> {
-//            PredArithConstr("${termToString(predicate.terms[0])} ${predicate.name} ${termToString(predicate.terms[1])}")
-            val leftTerm = termToString(predicate.terms[0])
-            val rightTerm = termToString(predicate.terms[1])
-
-            val prefix = leftTerm.prefix + "\n" + rightTerm.prefix
-            val infix = "${leftTerm.infix} ${predicate.name} ${rightTerm.infix}"
-            val postfix = leftTerm.postfix + "\n" + rightTerm.postfix
+            val infix = "${lConstr.infix} ${predicate.name} ${rConstr.infix}"
             PredArithConstr(infix, prefix, postfix)
         }
     }
