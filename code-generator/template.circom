@@ -113,6 +113,7 @@ template PrologResolutionTree(depth, branchFactor) {
    result[0] <== nodes[0].c;
 
    for(var i = 1; i < totalNodes; i++) {
+        log("===== Visiting node:", i+1, "of", totalNodes, "with goal", goals[i][0], goals[i][1], goals[i][2], goals[i][3], goals[i][4], "=====");
 
 
         // Get number of children for the current node
@@ -136,6 +137,7 @@ template PrologResolutionTree(depth, branchFactor) {
             nodes[i].children_goals[j] <-- childGoal;
         }
         result[i] <== result[i-1]+nodes[i].c;
+        log("===== Node result:", result[i], "=====");
     }
 
    c <== result[totalNodes-1]/totalNodes;

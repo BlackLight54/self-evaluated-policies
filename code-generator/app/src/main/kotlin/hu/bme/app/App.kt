@@ -286,6 +286,11 @@ private fun generateGoalTemplate(
 
             val extraConstraintsCount = arrayConstraintCount(rule_clauses)
             generateConstraints(rule_clauses, this, extraConstraintsCount)
+            appendLine("component goalCheck = IsEqual();")
+            appendLine("goalCheck.in[0] <== goal_args[0];")
+            appendLine("goalCheck.in[1] <== ${name};")
+            appendLine("signal goalCheckResult;")
+            appendLine("goalCheckResult <== goalCheck.out * ruleSelector[0];")
 
             rule_clauses.forEachIndexed { ind, rule ->
                 if (rule.body.any { it.hasAritmetic() }) {
@@ -356,13 +361,15 @@ private fun generateGoalTemplate(
             appendLine("\tsignal finalResult;")
             appendLine("\tfinalResult <== GreaterEqThan(8)([result[${rule_clauses.size + extraConstraintCountIfNeeded - 1}], 1]);")
             if (DEBUGGING) {
-                appendLine("\tif(finalResult != 1 && goal_args[0] == $name) {")
-                appendLine("\t\tlog(\"${name} failed\");")
+                appendLine("\tif(goal_args[0] == $name) {")
+                appendLine("\t\tif(finalResult != 1) {")
+                appendLine("\t\t\tlog(\"${name} failed\");")
                 IntArray(rule_clauses.size + extraConstraintCountIfNeeded) { it }.forEachIndexed { index, it ->
-                    appendLine("\t\tlog(\"Result[${index}] failed: \", result[${it}]);")
+                    appendLine("\t\t\tlog(\"Result[${index}] failed: \", result[${it}]);")
                 }
-                appendLine("\t} else {")
-                appendLine("\t\tlog(\"${name} succeeded\");")
+                appendLine("\t\t} else {")
+                appendLine("\t\t\tlog(\"${name} succeeded\");")
+                appendLine("\t\t}")
                 appendLine("\t}")
             }
             appendLine("\n\tc <== finalResult;")
@@ -658,13 +665,13 @@ fun findArrayTermMaxSize(rules: Map<String, List<Clause>>): Int {
 }
 
 
-fun clauseGenerateArithmeticsCheck(clause: Clause, index: Int): String {
+fun clauseGenerateArithmeticsCheck(clause: Clause, clauseIndex: Int): String {
     val arithmeticPredicates = clause.body.filter { it.hasAritmetic() }
     val asserts = arithmeticPredicates.map { predicate ->
         val predicateString = arithmeticToPredicateString(predicate, clause.body.indexOf(predicate))
         buildString {
             appendLine(predicateString.prefix)
-            appendLine("\truleSelector[$index]*(${predicateString.infix}) === 0;")
+            appendLine("\truleSelector[$clauseIndex]*(${predicateString.infix}) === 0;")
             appendLine(predicateString.postfix)
         }
     }
@@ -712,13 +719,13 @@ fun arithmeticToPredicateString(predicate: Predicate, unificationIndex: Int, ter
 
         "div" -> {
             prefix += buildString {
-                appendLine("signal intDivRes$termIndexStart;")
-                appendLine("intDivRes$termIndexStart <-- ${lConstr.infix} \\ ${rConstr.infix};")
+                appendLine("\tsignal intDivRes$termIndexStart;")
+                appendLine("\tintDivRes$termIndexStart <-- ${lConstr.infix} \\ ${rConstr.infix};")
 
-                appendLine("signal intDivRem$termIndexStart;")
-                appendLine("intDivRem$termIndexStart <-- ${lConstr.infix} % ${rConstr.infix};")
+                appendLine("\tsignal intDivRem$termIndexStart;")
+                appendLine("\tintDivRem$termIndexStart <-- ${lConstr.infix} % ${rConstr.infix};")
 
-                appendLine("intDivRes$termIndexStart * ${rConstr.infix} + intDivRem$termIndexStart=== ${lConstr.infix};")
+                appendLine("\tintDivRes$termIndexStart * ${rConstr.infix} + intDivRem$termIndexStart=== ${lConstr.infix};")
             }
             val infix = "intDivRes$termIndexStart/* op:div */"
             PredArithConstr(infix, prefix, postfix)
@@ -732,8 +739,8 @@ fun arithmeticToPredicateString(predicate: Predicate, unificationIndex: Int, ter
         "*" -> {
             // Check if any of the terms is a division
             prefix += buildString {
-                appendLine("signal prodRes$termIndexStart;")
-                appendLine("prodRes$termIndexStart <== ${lConstr.infix} * ${rConstr.infix};")
+                appendLine("\tsignal prodRes$termIndexStart;")
+                appendLine("\tprodRes$termIndexStart <== ${lConstr.infix} * ${rConstr.infix};")
             }
             val infix = "prodRes$termIndexStart /* op:* */"
             PredArithConstr(infix, prefix, postfix)

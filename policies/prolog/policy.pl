@@ -22,34 +22,34 @@ rollingConsumption(Sum,Result):-
     Result is Sum div 12.
 
 % === 3. classify using rolling consumption ===   
-consumptionClass(RollingConsumption,Class):-
+consumptionClass(RollingConsumptionVar,Class):-
     rolling_treshold('high',Treshold),
-    RollingConsumption > Treshold,
+    RollingConsumptionVar > Treshold,
     Class = 'high'.
-consumptionClass(RollingConsumption,Class):-
+consumptionClass(RollingConsumptionVar,Class):-
     rolling_treshold('mid',Treshold),
-    RollingConsumption > Treshold,
+    RollingConsumptionVar > Treshold,
     Class = 'mid'.
-consumptionClass(_RollingConsumption,Class):-
+consumptionClass(_RollingConsumptionVar,Class):-
     Class = 'low'.
 
 % === 4. classify using savings ===
-savingsClass(RollingConsumption,Consumption,Class):-
+savingsClass(RollingConsumptionVar,Consumption,Class):-
     savings_treshold('high',Treshold),
-    CurrentSaving is RollingConsumption - Consumption,
+    CurrentSaving is RollingConsumptionVar - Consumption,
     CurrentSaving > Treshold,
     Class = 'high'.
-savingsClass(RollingConsumption,Consumption,Class):-
+savingsClass(RollingConsumptionVar,Consumption,Class):-
     savings_treshold('mid',Treshold),
-    CurrentSaving is RollingConsumption - Consumption,
+    CurrentSaving is RollingConsumptionVar - Consumption,
     CurrentSaving > Treshold,
     Class = 'mid'.
-savingsClass(RollingConsumption,Consumption,Class):-
+savingsClass(RollingConsumptionVar,Consumption,Class):-
     savings_treshold('low',Treshold),
-    CurrentSaving is RollingConsumption - Consumption,
+    CurrentSaving is RollingConsumptionVar - Consumption,
     CurrentSaving > Treshold,
     Class = 'low'.
-savingsClass(_RollingConsumption,_Consumption,Class):-
+savingsClass(_RollingConsumptionVar,_Consumption,Class):-
     Class = 'none'.
 
 % === 5. Apply savings based support ===
@@ -80,12 +80,12 @@ applySocialSupports(Input,[], Input).
 endPrice(Price):-
     monthlyConsumptions(MonthlyConsumptions),
     sumOfMonthlyConsumptions(MonthlyConsumptions,Sum),
-    rollingConsumption(Sum,RollingConsumption),
+    rollingConsumption(Sum,RollingConsumptionVar),
     currentConsumption(Consumption),
-    consumptionClass(RollingConsumption,ConsumptionClass),
-    savingsClass(RollingConsumption,Consumption,SavingsClass),
+    consumptionClass(RollingConsumptionVar,ConsumptionClassVar),
+    savingsClass(RollingConsumptionVar,Consumption,SavingsClass),
     priceBase(PriceBase),
-    applySavingsSupport(PriceBase, SavingsClass, ConsumptionClass, PriceAfterSavings),
+    applySavingsSupport(PriceBase, SavingsClass, ConsumptionClassVar, PriceAfterSavings),
     socialCreds(Creds),
     applySocialSupports(PriceAfterSavings,Creds,Price).
 
