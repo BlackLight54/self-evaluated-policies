@@ -79,7 +79,7 @@ template TreeNode(branchFactor) {
 
 template PrologResolutionTree(depth, branchFactor) {
     // Define the maximum number of tree nodes
-    var totalNodes = 80;
+    var totalNodes = 200;
     
     // Define the tree structure
     signal input goals[totalNodes][5];

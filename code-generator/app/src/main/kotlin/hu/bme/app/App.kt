@@ -458,7 +458,7 @@ writeSteps:-
     val maxDepth = 4;
 
 
-    val template = File("template.circom").readText()
+    val template = File("../template.circom").readText()
 
     // Padded knowledge base. Each element in the knowledge base shall have a uniform length
     // Specifically, the length of the element with the longest length
@@ -495,7 +495,7 @@ writeSteps:-
         println("'$name': $index,")
     }
 
-    val treeJsonText = File("tree.json").readText()
+    val treeJsonText = File("../tree.json").readText()
     var tree = ResolutionTree.parseJson(treeJsonText, mapping)
     val maxUniBody = rules.maxOf { it.value.maxOf { it.body.size } }
     //println(tree.getMaxDepth())
