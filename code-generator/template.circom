@@ -2,6 +2,23 @@ pragma circom 2.1.0;
 
 include "node_modules/circomlib/circuits/comparators.circom";
 
+// Poseidon hash function
+include "node_modules/circomlib/circuits/poseidon.circom";
+// Hash Commitment
+template HashCommitment() {
+    // Public input - the commitment we're checking against
+    signal input commitment;
+
+    // Private input - the value being committed to
+    signal input value;
+
+    // Poseidon hash computation
+    component poseidonHasher = Poseidon(1);
+    poseidonHasher.inputs[0] <== value;
+
+    // Enforce that the hash matches the commitment
+    commitment === poseidonHasher.out;
+}
 
 template ArrayIsEqual(N) {
    signal input in[2][N];
@@ -237,7 +254,22 @@ REPLACE_RULE_CALLS
    signal finalResult;
    finalResult <== GreaterEqThan(8)([result[REPLACE_RULE_COUNT+ARITMETHICS_COUNT-1], 1]);
 
+
    c <== finalResult;
+   if (finalResult != 1) {
+            for (var i = 0; i < MAX_BODY_SIZE; i++) {
+               log("Goal[", i, "]: ", goal_args[i]);
+            }
+            for (var i = 0; i < REPLACE_BRANCH_FACTOR; i++) {
+               for (var j = 0; j < MAX_BODY_SIZE; j++) {
+                  log("Unified body[", i, "][", j, "]: ", unified_body[i][j]);
+               }
+            }
+         for(var i = 0; i < REPLACE_RULE_COUNT+ARITMETHICS_COUNT; i++) {
+            log("Result[", i, "]: ", result[i]);
+         }
+         log("Final result:", finalResult);
+      }
    c === 1;
 }
 
