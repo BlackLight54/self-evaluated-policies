@@ -15,7 +15,7 @@ template HashCommitment() {
     // Poseidon hash computation
     component poseidonHasher = Poseidon(1);
     poseidonHasher.inputs[0] <== value;
-
+    log("Checking commitment:", "value:", value, "commitment:", commitment, "hash:", poseidonHasher.out);
     // Enforce that the hash matches the commitment
     commitment === poseidonHasher.out;
 }
@@ -104,6 +104,7 @@ template PrologResolutionTree(depth, branchFactor) {
     signal input unifiedBodies[totalNodes][branchFactor][5]; 
     signal input childCountArray[totalNodes]; // This is the number of children each node has
     signal input bucket[13][13];
+    signal input consumption_hashes[12];
 
     signal output c;
     component nodes[totalNodes];
@@ -156,6 +157,17 @@ template PrologResolutionTree(depth, branchFactor) {
         }
         result[i] <== result[i-1]+nodes[i].c;
         log("===== Node result:", result[i], "=====");
+    }
+
+    component hashCommitmentChecker[12];
+    for (var i = 0; i < 12; i++) {
+        log("consumption_hashes[",i,"]", consumption_hashes[i]);
+    }
+    for (var i = 0; i < 12; i++) {
+        log("i", i);
+        hashCommitmentChecker[i] = HashCommitment();
+        hashCommitmentChecker[i].commitment <== consumption_hashes[i];
+        hashCommitmentChecker[i].value <== bucket[0][i+1];
     }
 
    c <== result[totalNodes-1]/totalNodes;
@@ -1591,4 +1603,4 @@ template KnowledgeChecker() {
    c <-- final_result;
  }
 
- component main = PrologResolutionTree(4, 13);
+ component main {public [consumption_hashes] }=  PrologResolutionTree(4, 13);
