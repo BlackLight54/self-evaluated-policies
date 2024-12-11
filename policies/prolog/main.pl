@@ -8,6 +8,7 @@
 :- initialization main.
 
 
+
 main:-
     prove(inputPriceOk,[Tree])
     ,json_write_dict(current_output, Tree,[width(100),serialize_unknown(true)])
