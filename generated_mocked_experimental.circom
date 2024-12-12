@@ -4,6 +4,7 @@ include "node_modules/circomlib/circuits/comparators.circom";
 
 // Poseidon hash function
 include "node_modules/circomlib/circuits/poseidon.circom";
+include "node_modules/circomlib/circuits/gates.circom";
 // Hash Commitment
 template HashCommitment() {
     // Public input - the commitment we're checking against
@@ -13,86 +14,90 @@ template HashCommitment() {
     signal input value;
 
     // Poseidon hash computation
-    component poseidonHasher = Poseidon(1);
-    poseidonHasher.inputs[0] <== value;
-    log("Checking commitment:", "value:", value, "commitment:", commitment, "hash:", poseidonHasher.out);
+    signal hash <== Poseidon(1)([value]);
+    if (hash != commitment) {
+        log("Checking hash commitment failed:", "value:", value, "commitment:", commitment, "hash:", hash);
+    }
+
     // Enforce that the hash matches the commitment
-    commitment === poseidonHasher.out;
+    commitment === hash;
 }
 
+template ExactlyOne(n) {
+    // Public signals
+    signal input in[n];  // Input array of binary values
+    signal output out;   // Output: 1 if exactly one input is true, 0 otherwise
+
+    // Internal signal for the sum of the inputs
+    signal sum;
+
+    // Ensure each input value is binary (0 or 1)
+    for (var i = 0; i < n; i++) {
+        in[i] * (in[i] - 1) === 0;
+    }
+
+    // Compute the sum of all input values
+    sum <== 0;
+    for (var i = 0; i < n; i++) {
+        sum += in[i];
+    }
+
+    // log if the sum is not 1
+    if (sum != 1) {
+        log("ExactlyOne failed: sum is not 1, sum:", sum);
+        for (var i = 0; i < n; i++) {
+            if (in[i] == 1) {
+                log("ExactlyOne failed: input", i, "is 1");
+            }
+        }
+    }
+    // Output is 1 if the sum equals 1, 0 otherwise
+    out <== (sum == 1) ? 1 : 0;
+}
 
 template ArrayIsEqual(N) {
-   signal input in[2][N];
-   signal output out;
-   
-   signal results[N];
-   component isequal[N];
+   signal input in1[N];
+    signal input in2[N];
 
-   isequal[0] = IsEqual();
-   isequal[0].in[0] <== in[0][0];
-   isequal[0].in[1] <== in[1][0];
-   results[0] <== isequal[0].out;
-   for(var i = 1; i < N; i++) {
-      isequal[i] = IsEqual();
-      isequal[i].in[0] <== in[0][i];
-      isequal[i].in[1] <== in[1][i];
-      results[i] <== results[i-1] + isequal[i].out;
+   signal results[N];
+
+   for (var i = 0; i < N; i++) {
+      results[i] <== IsEqual()([in1[i], in2[i]]);
    }
 
-   signal final_result;
-   final_result <== IsEqual()([results[N-1], N]);
-
-   out <== final_result;
+   signal output out;
+   out <== MultiAND(N)(results);
 }
 
 template TreeNode(branchFactor) {
-   // Each node's data
-   signal input goal[5];
-   signal input unified_body[branchFactor][5];
+    // Each node's data
+    signal input goal[5];
+    signal input unified_body[branchFactor][5];
 
     // If it's not a leaf, we connect the children
-   signal input children_goals[branchFactor][5];
-   signal output c;
-   
-   signal result[branchFactor*2+1];
-   component transitiontochild[branchFactor];
-   transitiontochild[0] = TransitionLogic();
-   transitiontochild[0].prevUnifiedBodies <== unified_body;
-   transitiontochild[0].currentGoal <== children_goals[0];
-   result[0] <==  transitiontochild[0].transition_okay;
-   for(var i =1; i < branchFactor; i++) {
-      log("Visiting child:", i+1, "of", branchFactor, "with goal", children_goals[i][0], children_goals[i][1], children_goals[i][2], "from parent", goal[0], goal[1], goal[2]);
-      transitiontochild[i] = TransitionLogic();
-      transitiontochild[i].prevUnifiedBodies <== unified_body;
-      transitiontochild[i].currentGoal <== children_goals[i];
-      result[i] <==  result[i-1] + transitiontochild[i].transition_okay;
-   }
-   signal emptyResult[branchFactor+1];
-   component isZero[branchFactor+1];
-   for(var i = 0; i < branchFactor+1; i++) {
-      isZero[i] = IsZero();
-   }
+    signal input children_goals[branchFactor][5];
+    signal output c;
 
-   isZero[0].in <== goal[0];
-   emptyResult[0] <== isZero[0].out;
-   component offset = IsZero();
-   offset.in <== isZero[0].out;
-   
-   
-   for(var i = 0; i < branchFactor; i++) {
-		isZero[i+1].in <== children_goals[i][0]; 
-		result[i+branchFactor] <== result[i+branchFactor-1] + (isZero[i+1].out*isZero[0].out) + offset.out;
+    signal transitionToChild[branchFactor];
+
+    for(var i = 0; i < branchFactor; i++) {
+        transitionToChild[i] <== TransitionLogic()(unified_body, children_goals[i]);
+        if (transitionToChild[i] != 1) {
+            log("Failed transition to child:", i+1, "of", branchFactor, "with goal", children_goals[i][0], children_goals[i][1], children_goals[i][2], "from parent", goal[0], goal[1], goal[2]);
+        }
     }
-    
+    signal transitionResult <== MultiAND(branchFactor)(transitionToChild);
+    // TODO: Balázst megkérdezni ez itt jó-e? Lefunti lefut
+    signal emptyResults[branchFactor];
+    for(var i = 0; i < branchFactor; i++) {
+        emptyResults[i] <== IsZero()(children_goals[i][0]);
+    }
+    signal emptyResult <== MultiAND(branchFactor)(emptyResults);
+    signal result <== OR()(transitionResult, emptyResult);
+    signal checknode <== CheckNode()(goal, unified_body);
 
-   component checknode = CheckNode();
-   checknode.goal_args <== goal;
-   checknode.unified_body <== unified_body;
-   result[branchFactor*2] <== ((result[branchFactor*2-1] + checknode.c -1 )/2)/branchFactor;
-   log(result[branchFactor*2]);
-
-   c <== result[branchFactor*2];
-   c === 1;
+    c <== AND()(result, checknode);
+    c === 1;
 }
 
 template PrologResolutionTree(depth, branchFactor) {
@@ -131,7 +136,7 @@ template PrologResolutionTree(depth, branchFactor) {
 
    result[0] <== nodes[0].c;
 
-   for(var i = 1; i < totalNodes; i++) {
+    for(var i = 1; i < totalNodes; i++) {
         log("===== Visiting node:", i+1, "of", totalNodes, "with goal", goals[i][0], goals[i][1], goals[i][2], goals[i][3], goals[i][4], "=====");
 
 
@@ -140,34 +145,29 @@ template PrologResolutionTree(depth, branchFactor) {
         nodes[i].goal <== goals[i];
         nodes[i].unified_body <== unifiedBodies[i];
 
-	     var sum = 0;
-		  for(var j = 0; j < i;j++) {
-		     sum += childCountArray[j];
-		  }
+        var sum = 0;
+        for(var j = 0; j < i;j++) {
+            sum += childCountArray[j];
+        }
         // Traverse through children
         for(var j = 0; j < branchFactor; j++) {
-         var childGoal[5];
-			var childIndex = sum + j + 1;
-			if(j < numChildren && childIndex < totalNodes) {
-				childGoal = goals[childIndex];
-			} else {
+            var childGoal[5];
+            var childIndex = sum + j + 1;
+            if(j < numChildren && childIndex < totalNodes) {
+                childGoal = goals[childIndex];
+            } else {
             childGoal = [0,0,0,0,0];
-			}
+            }
             nodes[i].children_goals[j] <-- childGoal;
         }
         result[i] <== result[i-1]+nodes[i].c;
         log("===== Node result:", result[i], "=====");
     }
 
-    component hashCommitmentChecker[12];
+
+
     for (var i = 0; i < 12; i++) {
-        log("consumption_hashes[",i,"]", consumption_hashes[i]);
-    }
-    for (var i = 0; i < 12; i++) {
-        log("i", i);
-        hashCommitmentChecker[i] = HashCommitment();
-        hashCommitmentChecker[i].commitment <== consumption_hashes[i];
-        hashCommitmentChecker[i].value <== bucket[0][i+1];
+        HashCommitment()(consumption_hashes[i],bucket[0][i+1]);
     }
 
    c <== result[totalNodes-1]/totalNodes;
@@ -254,8 +254,7 @@ template TransitionLogic() {
    checkGoalTrue.in[0] <== currentGoal[0];
    checkGoalTrue.in[1] <== true;
 
-   signal final_result;
-   final_result <== (mathcheck.out + (checkGoalZero.out*2) + invertZero.out + (checkGoalTrue.out - mathcheck.out)*checkGoalTrue.out )/2;
+   signal final_result <== (mathcheck.out + (checkGoalZero.out*2) + invertZero.out + (checkGoalTrue.out - mathcheck.out)*checkGoalTrue.out )/2;
    log("Final result:", final_result);
    log(mathcheck.out, checkGoalZero.out, invertZero.out);
 
@@ -269,8 +268,8 @@ template TransitionLogic() {
 
 
 template CheckNode(){
-   signal input unified_body[13][5];
    signal input goal_args[5];
+   signal input unified_body[13][5];
    signal output c;
 	var monthlyConsumptions = 96;
 	var sumOfMonthlyConsumptions = 86;
@@ -496,11 +495,12 @@ template GoalMonthlyConsumptions(){
 	resConstraint0 <== IsEqual()([intermediateResult0[0], 1]);
 	result[0] <== resConstraint0 * ruleSelector[0];
 
-component goalCheck = IsEqual();
-goalCheck.in[0] <== goal_args[0];
-goalCheck.in[1] <== monthlyConsumptions;
-signal goalCheckResult;
-goalCheckResult <== goalCheck.out * ruleSelector[0];
+// component goalCheck = IsEqual();
+// goalCheck.in[0] <== goal_args[0];
+// goalCheck.in[1] <== monthlyConsumptions;
+signal goalCheck  <== IsEqual()([goal_args[0],monthlyConsumptions]);
+signal goalCheckResult ;
+goalCheckResult <== goalCheck * ruleSelector[0];
 	signal finalResult;
 	finalResult <== GreaterEqThan(8)([result[0], 1]);
 	if(goal_args[0] == monthlyConsumptions) {
@@ -1583,24 +1583,18 @@ template KnowledgeChecker() {
    var len = 33;
    var knowledgeBase[len][5] = [[86, 4, 0, 0, 0],[87, 70805418, 4, 70805418, 0],[88, 43, 0, 0, 0],[88, 47, 3000, 0, 0],[88, 51, 7000, 0, 0],[89, 43, 250, 0, 0],[89, 47, 500, 0, 0],[89, 51, 1000, 0, 0],[90, 43, 43, 55, 500],[90, 43, 47, 24, 10],[90, 43, 51, 55, 500],[90, 47, 43, 55, 500],[90, 47, 47, 55, 500],[90, 47, 51, 55, 500],[90, 51, 43, 55, 500],[90, 51, 47, 55, 500],[90, 51, 51, 55, 500],[91, 54, 55, 10000, 0],[92, 1, 2001, 0, 0],[92, 2, 2001, 0, 0],[92, 3, 2001, 0, 0],[92, 4, 2001, 0, 0],[92, 5, 2001, 0, 0],[92, 6, 2001, 0, 0],[92, 7, 2000, 0, 0],[92, 8, 2000, 0, 0],[92, 9, 2000, 0, 0],[92, 10, 2000, 0, 0],[92, 11, 2000, 0, 0],[92, 12, 2000, 0, 0],[93, 1400, 0, 0, 0],[94, 747, 83, 0, 0],[95, 931220, 0, 0, 0]];
    signal result[len];
-   component arrayIsEqual[len];
+   signal arrayIsEqual[len];
 
-
-   arrayIsEqual[0] = ArrayIsEqual(5);
-   arrayIsEqual[0].in[0] <== a;
-   arrayIsEqual[0].in[1] <== knowledgeBase[0];
-   result[0] <== arrayIsEqual[0].out;
-
-   for(var i = 1; i < len; i++){
-      arrayIsEqual[i] = ArrayIsEqual(5);
-      arrayIsEqual[i].in[0] <== a;
-      arrayIsEqual[i].in[1] <== knowledgeBase[i];
-      result[i] <== arrayIsEqual[i].out + result[i-1];
+   for(var i = 0; i < len; i++){
+      arrayIsEqual[i] <== ArrayIsEqual(5)(a, knowledgeBase[i]);
+      if (i == 0) {
+         result[i] <== arrayIsEqual[i];
+      } else {
+        result[i] <== arrayIsEqual[i] + result[i-1];
+      }
    }
 
-   signal final_result;
-   final_result <== IsEqual()([result[len-1], 1]);
-   c <-- final_result;
+   c <== IsEqual()([result[len-1], 1]);
  }
 
  component main {public [consumption_hashes] }=  PrologResolutionTree(4, 13);

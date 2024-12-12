@@ -13,11 +13,11 @@ template HashCommitment() {
     signal input value;
 
     // Poseidon hash computation
-    component poseidonHasher = Poseidon(1);
-    poseidonHasher.inputs[0] <== value;
+    signal hash <== Poseidon(1)([value]);
+    log("Checking commitment:", "value:", value, "commitment:", commitment, "hash:", hash);
 
     // Enforce that the hash matches the commitment
-    commitment === poseidonHasher.out;
+    commitment === hash;
 }
 
 template ArrayIsEqual(N) {
