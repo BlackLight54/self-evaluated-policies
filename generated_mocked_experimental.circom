@@ -5,6 +5,7 @@ include "node_modules/circomlib/circuits/comparators.circom";
 // Poseidon hash function
 include "node_modules/circomlib/circuits/poseidon.circom";
 include "node_modules/circomlib/circuits/gates.circom";
+include "node_modules/circomlib/circuits/multiplexer.circom";
 // Hash Commitment
 template HashCommitment() {
     // Public input - the commitment we're checking against
@@ -29,7 +30,6 @@ template ExactlyOne(n) {
     signal output out;   // Output: 1 if exactly one input is true, 0 otherwise
 
     // Internal signal for the sum of the inputs
-    signal sum;
 
     // Ensure each input value is binary (0 or 1)
     for (var i = 0; i < n; i++) {
@@ -37,10 +37,16 @@ template ExactlyOne(n) {
     }
 
     // Compute the sum of all input values
-    sum <== 0;
+    signal partialSums[n];
     for (var i = 0; i < n; i++) {
-        sum += in[i];
+        if (i == 0) {
+            partialSums[i] <== in[i];
+        } else {
+            partialSums[i] <== partialSums[i - 1] + in[i];
+        }
+
     }
+    signal sum <== partialSums[n - 1];
 
     // log if the sum is not 1
     if (sum != 1) {
@@ -52,7 +58,7 @@ template ExactlyOne(n) {
         }
     }
     // Output is 1 if the sum equals 1, 0 otherwise
-    out <== (sum == 1) ? 1 : 0;
+    out <== IsEqual()([sum, 1]);
 }
 
 template ArrayIsEqual(N) {
@@ -268,194 +274,123 @@ template TransitionLogic() {
 
 
 template CheckNode(){
-   signal input goal_args[5];
-   signal input unified_body[13][5];
-   signal output c;
-	var monthlyConsumptions = 96;
-	var sumOfMonthlyConsumptions = 86;
-	var rollingConsumption = 100;
-	var consumptionClass = 102;
-	var savingsClass = 104;
-	var priceBase = 106;
-	var applySupport = 108;
-	var applySavingsSupport = 109;
-	var socialCreds = 110;
-	var applySocialSupports = 87;
-	var endPrice = 112;
-	var inputPriceOk = 113;
-	var rolling_treshold = 88;
-	var savings_treshold = 89;
-	var support_matrix = 90;
-	var social_suport = 91;
-	var monthly_consumption = 92;
-	var currentConsumption = 93;
-	var currentPrice = 94;
-	var inputPayment = 95;
-	var true = 114;
+    signal input goal_args[5];
+    signal input unified_body[13][5];
+    signal output c;
+    var monthlyConsumptions = 96;
+    var sumOfMonthlyConsumptions = 86;
+    var rollingConsumption = 100;
+    var consumptionClass = 102;
+    var savingsClass = 104;
+    var priceBase = 106;
+    var applySupport = 108;
+    var applySavingsSupport = 109;
+    var socialCreds = 110;
+    var applySocialSupports = 87;
+    var endPrice = 112;
+    var inputPriceOk = 113;
+    var rolling_treshold = 88;
+    var savings_treshold = 89;
+    var support_matrix = 90;
+    var social_suport = 91;
+    var monthly_consumption = 92;
+    var currentConsumption = 93;
+    var currentPrice = 94;
+    var inputPayment = 95;
+    var true = 114;
+    var none = 0;
 
-   var none = 0;
-	component monthlyConsumptionsGoal = GoalMonthlyConsumptions();
-	component sumOfMonthlyConsumptionsGoal = GoalSumOfMonthlyConsumptions();
-	component rollingConsumptionGoal = GoalRollingConsumption();
-	component consumptionClassGoal = GoalConsumptionClass();
-	component savingsClassGoal = GoalSavingsClass();
-	component priceBaseGoal = GoalPriceBase();
-	component applySupportGoal = GoalApplySupport();
-	component applySavingsSupportGoal = GoalApplySavingsSupport();
-	component socialCredsGoal = GoalSocialCreds();
-	component applySocialSupportsGoal = GoalApplySocialSupports();
-	component endPriceGoal = GoalEndPrice();
-	component inputPriceOkGoal = GoalInputPriceOk();
-	component knowledge[10];
-	for (var i = 0; i < 10; i++) {
-		knowledge[i] = KnowledgeChecker();
-	}
-	signal result[31];
-	signal ruleSelector[31];
-	ruleSelector[0] <== IsEqual()([goal_args[0], monthlyConsumptions]);
-	monthlyConsumptionsGoal.goal_args <== goal_args;
-	monthlyConsumptionsGoal.unified_body[0] <== unified_body[0];
-	result[0] <== monthlyConsumptionsGoal.c*ruleSelector[0];
-	ruleSelector[1] <== IsEqual()([goal_args[0], sumOfMonthlyConsumptions]);
-	sumOfMonthlyConsumptionsGoal.goal_args <== goal_args;
-	sumOfMonthlyConsumptionsGoal.unified_body[0] <== unified_body[0];
-	sumOfMonthlyConsumptionsGoal.unified_body[1] <== unified_body[1];
-	result[1] <== sumOfMonthlyConsumptionsGoal.c*ruleSelector[1] + result[0];
-	ruleSelector[2] <== IsEqual()([goal_args[0], rollingConsumption]);
-	rollingConsumptionGoal.goal_args <== goal_args;
-	rollingConsumptionGoal.unified_body[0] <== unified_body[0];
-	result[2] <== rollingConsumptionGoal.c*ruleSelector[2] + result[1];
-	ruleSelector[3] <== IsEqual()([goal_args[0], consumptionClass]);
-	consumptionClassGoal.goal_args <== goal_args;
-	consumptionClassGoal.unified_body[0] <== unified_body[0];
-	consumptionClassGoal.unified_body[1] <== unified_body[1];
-	consumptionClassGoal.unified_body[2] <== unified_body[2];
-	result[3] <== consumptionClassGoal.c*ruleSelector[3] + result[2];
-	ruleSelector[4] <== IsEqual()([goal_args[0], savingsClass]);
-	savingsClassGoal.goal_args <== goal_args;
-	savingsClassGoal.unified_body[0] <== unified_body[0];
-	savingsClassGoal.unified_body[1] <== unified_body[1];
-	savingsClassGoal.unified_body[2] <== unified_body[2];
-	savingsClassGoal.unified_body[3] <== unified_body[3];
-	result[4] <== savingsClassGoal.c*ruleSelector[4] + result[3];
-	ruleSelector[5] <== IsEqual()([goal_args[0], priceBase]);
-	priceBaseGoal.goal_args <== goal_args;
-	priceBaseGoal.unified_body[0] <== unified_body[0];
-	priceBaseGoal.unified_body[1] <== unified_body[1];
-	priceBaseGoal.unified_body[2] <== unified_body[2];
-	result[5] <== priceBaseGoal.c*ruleSelector[5] + result[4];
-	ruleSelector[6] <== IsEqual()([goal_args[0], applySupport]);
-	applySupportGoal.goal_args <== goal_args;
-	applySupportGoal.unified_body[0] <== unified_body[0];
-	applySupportGoal.unified_body[1] <== unified_body[1];
-	result[6] <== applySupportGoal.c*ruleSelector[6] + result[5];
-	ruleSelector[7] <== IsEqual()([goal_args[0], applySavingsSupport]);
-	applySavingsSupportGoal.goal_args <== goal_args;
-	applySavingsSupportGoal.unified_body[0] <== unified_body[0];
-	applySavingsSupportGoal.unified_body[1] <== unified_body[1];
-	result[7] <== applySavingsSupportGoal.c*ruleSelector[7] + result[6];
-	ruleSelector[8] <== IsEqual()([goal_args[0], socialCreds]);
-	socialCredsGoal.goal_args <== goal_args;
-	socialCredsGoal.unified_body[0] <== unified_body[0];
-	result[8] <== socialCredsGoal.c*ruleSelector[8] + result[7];
-	ruleSelector[9] <== IsEqual()([goal_args[0], applySocialSupports]);
-	applySocialSupportsGoal.goal_args <== goal_args;
-	applySocialSupportsGoal.unified_body[0] <== unified_body[0];
-	applySocialSupportsGoal.unified_body[1] <== unified_body[1];
-	result[9] <== applySocialSupportsGoal.c*ruleSelector[9] + result[8];
-	ruleSelector[10] <== IsEqual()([goal_args[0], endPrice]);
-	endPriceGoal.goal_args <== goal_args;
-	endPriceGoal.unified_body[0] <== unified_body[0];
-	endPriceGoal.unified_body[1] <== unified_body[1];
-	endPriceGoal.unified_body[2] <== unified_body[2];
-	endPriceGoal.unified_body[3] <== unified_body[3];
-	endPriceGoal.unified_body[4] <== unified_body[4];
-	endPriceGoal.unified_body[5] <== unified_body[5];
-	endPriceGoal.unified_body[6] <== unified_body[6];
-	endPriceGoal.unified_body[7] <== unified_body[7];
-	endPriceGoal.unified_body[8] <== unified_body[8];
-	endPriceGoal.unified_body[9] <== unified_body[9];
-	result[10] <== endPriceGoal.c*ruleSelector[10] + result[9];
-	ruleSelector[11] <== IsEqual()([goal_args[0], inputPriceOk]);
-	inputPriceOkGoal.goal_args <== goal_args;
-	inputPriceOkGoal.unified_body[0] <== unified_body[0];
-	inputPriceOkGoal.unified_body[1] <== unified_body[1];
-	result[11] <== inputPriceOkGoal.c*ruleSelector[11] + result[10];
-	ruleSelector[12] <== IsEqual()([goal_args[0], sumOfMonthlyConsumptions]);
-	knowledge[0].a <== goal_args;
-	result[12] <== knowledge[0].c*ruleSelector[12] + result[11];
-	ruleSelector[13] <== IsEqual()([goal_args[0], applySocialSupports]);
-	knowledge[1].a <== goal_args;
-	result[13] <== knowledge[1].c*ruleSelector[13] + result[12];
-	ruleSelector[14] <== IsEqual()([goal_args[0], rolling_treshold]);
-	knowledge[2].a <== goal_args;
-	result[14] <== knowledge[2].c*ruleSelector[14] + result[13];
-	ruleSelector[15] <== IsEqual()([goal_args[0], savings_treshold]);
-	knowledge[3].a <== goal_args;
-	result[15] <== knowledge[3].c*ruleSelector[15] + result[14];
-	ruleSelector[16] <== IsEqual()([goal_args[0], support_matrix]);
-	knowledge[4].a <== goal_args;
-	result[16] <== knowledge[4].c*ruleSelector[16] + result[15];
-	ruleSelector[17] <== IsEqual()([goal_args[0], social_suport]);
-	knowledge[5].a <== goal_args;
-	result[17] <== knowledge[5].c*ruleSelector[17] + result[16];
-	ruleSelector[18] <== IsEqual()([goal_args[0], monthly_consumption]);
-	knowledge[6].a <== goal_args;
-	result[18] <== knowledge[6].c*ruleSelector[18] + result[17];
-	ruleSelector[19] <== IsEqual()([goal_args[0], currentConsumption]);
-	knowledge[7].a <== goal_args;
-	result[19] <== knowledge[7].c*ruleSelector[19] + result[18];
-	ruleSelector[20] <== IsEqual()([goal_args[0], currentPrice]);
-	knowledge[8].a <== goal_args;
-	result[20] <== knowledge[8].c*ruleSelector[20] + result[19];
-	ruleSelector[21] <== IsEqual()([goal_args[0], inputPayment]);
-	knowledge[9].a <== goal_args;
-	result[21] <== knowledge[9].c*ruleSelector[21] + result[20];
-	ruleSelector[22] <== IsEqual()([goal_args[0], 98]);
-	result[22] <== ruleSelector[22] + result[21];
-	ruleSelector[23] <== IsEqual()([goal_args[0], 97]);
-	result[23] <== ruleSelector[23] + result[22];
-	ruleSelector[24] <== IsEqual()([goal_args[0], 103]);
-	result[24] <== ruleSelector[24] + result[23];
-	ruleSelector[25] <== IsEqual()([goal_args[0], 99]);
-	result[25] <== ruleSelector[25] + result[24];
-	ruleSelector[26] <== IsEqual()([goal_args[0], 105]);
-	result[26] <== ruleSelector[26] + result[25];
-	ruleSelector[27] <== IsEqual()([goal_args[0], 107]);
-	result[27] <== ruleSelector[27] + result[26];
-	ruleSelector[28] <== IsEqual()([goal_args[0], 101]);
-	result[28] <== ruleSelector[28] + result[27];
+    signal selectors[31];
+    selectors[0] <== IsEqual()([goal_args[0], monthlyConsumptions]);
+    selectors[1] <== IsEqual()([goal_args[0], sumOfMonthlyConsumptions]);
+    selectors[2] <== IsEqual()([goal_args[0], rollingConsumption]);
+    selectors[3] <== IsEqual()([goal_args[0], consumptionClass]);
+    selectors[4] <== IsEqual()([goal_args[0], savingsClass]);
+    selectors[5] <== IsEqual()([goal_args[0], priceBase]);
+    selectors[6] <== IsEqual()([goal_args[0], applySupport]);
+    selectors[7] <== IsEqual()([goal_args[0], applySavingsSupport]);
+    selectors[8] <== IsEqual()([goal_args[0], socialCreds]);
+    selectors[9] <== IsEqual()([goal_args[0], applySocialSupports]);
+    selectors[10] <== IsEqual()([goal_args[0], endPrice]);
+    selectors[11] <== IsEqual()([goal_args[0], inputPriceOk]);
+    selectors[12] <== IsEqual()([goal_args[0], rolling_treshold]);
+    selectors[13] <== IsEqual()([goal_args[0], savings_treshold]);
+    selectors[14] <== IsEqual()([goal_args[0], support_matrix]);
+    selectors[15] <== IsEqual()([goal_args[0], social_suport]);
+    selectors[16] <== IsEqual()([goal_args[0], monthly_consumption]);
+    selectors[17] <== IsEqual()([goal_args[0], currentConsumption]);
+    selectors[18] <== IsEqual()([goal_args[0], currentPrice]);
+    selectors[19] <== IsEqual()([goal_args[0], inputPayment]);
+    selectors[20] <== IsEqual()([goal_args[0], true]);
+    selectors[21] <== IsEqual()([goal_args[0], none]);
+    selectors[22]<== IsEqual()([goal_args[0], 98]); //is
+    selectors[23]<== IsEqual()([goal_args[0], 97]); //equals
+    selectors[24]<== IsEqual()([goal_args[0], 103]); //greater
+    selectors[25]<== IsEqual()([goal_args[0], 99]); //plus
+    selectors[26]<== IsEqual()([goal_args[0], 105]); //minus
+    selectors[27]<== IsEqual()([goal_args[0], 107]); //times
+    selectors[28]<== IsEqual()([goal_args[0], 101]); // div
+    selectors[29]<== IsEqual()([goal_args[0], true]);
+    selectors[30]<== IsEqual()([goal_args[0], none]);
 
-   component trueSelector = IsEqual();
-   trueSelector.in[0] <== goal_args[0];
-   trueSelector.in[1] <== true;
-   result[24+7-2] <== trueSelector.out + result[24+7-3];
+    signal inputs[31];
+    inputs[0] <== GoalMonthlyConsumptions()([unified_body[0]],goal_args);
+    inputs[1] <== GoalSumOfMonthlyConsumptions()([unified_body[0], unified_body[1]],goal_args);
+    inputs[2] <== GoalRollingConsumption()([unified_body[0]],goal_args);
+    inputs[3] <== GoalConsumptionClass()([unified_body[0], unified_body[1], unified_body[2]], goal_args);
+    inputs[4] <== GoalSavingsClass()([unified_body[0], unified_body[1], unified_body[2], unified_body[3]], goal_args);
+    inputs[5] <== GoalPriceBase()([unified_body[0], unified_body[1], unified_body[2]], goal_args);
+    inputs[6] <== GoalApplySupport()([unified_body[0], unified_body[1]], goal_args);
+    inputs[7] <== GoalApplySavingsSupport()([unified_body[0], unified_body[1]], goal_args);
+    inputs[8] <== GoalSocialCreds()([unified_body[0]], goal_args);
+    inputs[9] <== GoalApplySocialSupports()([unified_body[0], unified_body[1]], goal_args);
+    inputs[10] <== GoalEndPrice()([unified_body[0], unified_body[1], unified_body[2], unified_body[3], unified_body[4], unified_body[5], unified_body[6], unified_body[7], unified_body[8], unified_body[9]], goal_args);
+    inputs[11] <== GoalInputPriceOk()([unified_body[0], unified_body[1]], goal_args);
+    for (var i = 12; i < 10 + 12; i++) {
+        inputs[i] <== KnowledgeChecker()(goal_args);
+    }
+    inputs[22] <== IsEqual()([goal_args[0], 98]); //is
+    inputs[23] <== IsEqual()([goal_args[0], 97]); //equals
+    inputs[24] <== IsEqual()([goal_args[0], 103]); //greater
+    inputs[25] <== IsEqual()([goal_args[0], 99]); //plus
+    inputs[26] <== IsEqual()([goal_args[0], 105]); //minus
+    inputs[27] <== IsEqual()([goal_args[0], 107]); //times
+    inputs[28] <== IsEqual()([goal_args[0], 101]); // div
+    inputs[29] <== IsEqual()([goal_args[0], true]);
+    inputs[30] <== IsEqual()([goal_args[0], none]);
 
-   component noneSelector = IsZero();
-   noneSelector.in <== goal_args[0];
-   result[24+7-1] <== noneSelector.out + result[24+7-2];
+    signal result[31];
+    for (var i = 0; i < 31; i++) {
+        result[i] <== inputs[i] * selectors[i];
+    }
 
+    signal partialSum[31];
+    for (var i = 0; i < 31; i++) {
+        if (i == 0) {
+            partialSum[i] <== result[i];
+        } else {
+            partialSum[i] <== partialSum[i - 1] + result[i];
+        }
+    }
+    signal sum <== partialSum[31 - 1];
+    signal finalResult <== GreaterEqThan(8)([sum, 1]);
 
-   signal finalResult;
-   finalResult <== GreaterEqThan(8)([result[24+7-1], 1]);
-
-
-   c <== finalResult;
-   if (finalResult != 1) {
-            for (var i = 0; i < 5; i++) {
-               log("Goal[", i, "]: ", goal_args[i]);
+    c <== finalResult;
+    if (finalResult != 1) {
+        for (var i = 0; i < 5; i++) {
+            log("Goal[", i, "]: ", goal_args[i]);
+        }
+        for (var i = 0; i < 13; i++) {
+            for (var j = 0; j < 5; j++) {
+                log("Unified body[", i, "][", j, "]: ", unified_body[i][j]);
             }
-            for (var i = 0; i < 13; i++) {
-               for (var j = 0; j < 5; j++) {
-                  log("Unified body[", i, "][", j, "]: ", unified_body[i][j]);
-               }
-            }
-         for(var i = 0; i < 24+7; i++) {
-            log("Result[", i, "]: ", result[i]);
-         }
-         log("Final result:", finalResult);
-      }
-   c === 1;
+        }
+        //for(var i = 0; i < 24+7; i++) {
+        //   log("Result[", i, "]: ", result[i]);
+        //}
+        log("Final result:", finalResult);
+    }
+    c === 1;
 }
 
 template GoalMonthlyConsumptions(){
