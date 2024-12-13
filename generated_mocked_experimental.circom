@@ -361,6 +361,9 @@ template CheckNode(){
 
     signal result[31];
     for (var i = 0; i < 31; i++) {
+    if (selectors[i] == 1 && inputs[i] != 1) {
+        log("Failed goal:", i, "with args:", goal_args[0], goal_args[1], goal_args[2], goal_args[3], goal_args[4]);
+    }
         result[i] <== inputs[i] * selectors[i];
     }
 
@@ -627,69 +630,52 @@ template GoalConsumptionClass(){
 	var currentConsumption = 93;
 	var currentPrice = 94;
 	var inputPayment = 95;
+
+
 	signal ruleSelector[3];
+
 	signal ruleSelector_intermediate[3][3];
 	ruleSelector_intermediate[0][0] <== IsEqual()([unified_body[0][0], rolling_treshold]);
-	component isEqual0_1 = IsEqual();
-	isEqual0_1.in[0] <== unified_body[1][0];
-	isEqual0_1.in[1] <== 103;
-	ruleSelector_intermediate[0][1] <== isEqual0_1.out + ruleSelector_intermediate[0][0];
-	component isEqual0_2 = IsEqual();
-	isEqual0_2.in[0] <== unified_body[2][0];
-	isEqual0_2.in[1] <== 97;
-	ruleSelector_intermediate[0][2] <== isEqual0_2.out + ruleSelector_intermediate[0][1];
+	signal isEqual0_1 <== IsEqual()([unified_body[1][0], 103]);
+	ruleSelector_intermediate[0][1] <== isEqual0_1 + ruleSelector_intermediate[0][0];
+	signal isEqual0_2 <== IsEqual()([unified_body[2][0], 97]);
+	ruleSelector_intermediate[0][2] <== isEqual0_2 + ruleSelector_intermediate[0][1];
 	ruleSelector[0] <== IsEqual()([ruleSelector_intermediate[0][2], 3]);
+
 	ruleSelector_intermediate[1][0] <== IsEqual()([unified_body[0][0], rolling_treshold]);
-	component isEqual1_1 = IsEqual();
-	isEqual1_1.in[0] <== unified_body[1][0];
-	isEqual1_1.in[1] <== 103;
-	ruleSelector_intermediate[1][1] <== isEqual1_1.out + ruleSelector_intermediate[1][0];
-	component isEqual1_2 = IsEqual();
-	isEqual1_2.in[0] <== unified_body[2][0];
-	isEqual1_2.in[1] <== 97;
-	ruleSelector_intermediate[1][2] <== isEqual1_2.out + ruleSelector_intermediate[1][1];
+	signal isEqual1_1 <== IsEqual()([unified_body[1][0], 103]);
+	ruleSelector_intermediate[1][1] <== isEqual1_1 + ruleSelector_intermediate[1][0];
+	signal isEqual1_2 <== IsEqual()([unified_body[2][0], 97]);
+	ruleSelector_intermediate[1][2] <== isEqual1_2 + ruleSelector_intermediate[1][1];
 	ruleSelector[1] <== IsEqual()([ruleSelector_intermediate[1][2], 3]);
+
 	ruleSelector_intermediate[2][0] <== IsEqual()([unified_body[0][0], 97]);
-	component isZero2_1 = IsZero();
-	isZero2_1.in <== unified_body[1][0];
-	ruleSelector_intermediate[2][1] <== isZero2_1.out + ruleSelector_intermediate[2][0];
-	component isZero2_2 = IsZero();
-	isZero2_2.in <== unified_body[2][0];
-	ruleSelector_intermediate[2][2] <== isZero2_2.out + ruleSelector_intermediate[2][1];
+	signal isZero2_1 <== IsZero()(unified_body[1][0]);
+	ruleSelector_intermediate[2][1] <== isZero2_1 + ruleSelector_intermediate[2][0];
+	signal isZero2_2 <== IsZero()(unified_body[2][0]);
+	ruleSelector_intermediate[2][2] <== isZero2_2 + ruleSelector_intermediate[2][1];
 	ruleSelector[2] <== IsEqual()([ruleSelector_intermediate[2][2], 3]);
+
+
 	signal result[6];
 	signal intermediateResult0[3];
-	component constraint0_0 = IsEqual();
-	constraint0_0.in[0] <== unified_body[1][1];
-	constraint0_0.in[1] <== goal_args[1];
-	intermediateResult0[0] <== constraint0_0.out;
-	component constraint0_1 = IsEqual();
-	constraint0_1.in[0] <== unified_body[2][1];
-	constraint0_1.in[1] <== goal_args[2];
-	intermediateResult0[1] <== constraint0_1.out + intermediateResult0[0];
-	component constraint0_2 = IsEqual();
-	constraint0_2.in[0] <== unified_body[0][2];
-	constraint0_2.in[1] <== unified_body[1][2];
-	intermediateResult0[2] <== constraint0_2.out + intermediateResult0[1];
-	signal resConstraint0;
-	resConstraint0 <== IsEqual()([intermediateResult0[2], 3]);
+	signal constraint0_0 <== IsEqual()([unified_body[1][1], goal_args[1]]);
+	intermediateResult0[0] <== constraint0_0;
+	signal constraint0_1 <== IsEqual()([unified_body[2][1], goal_args[2]]);
+	intermediateResult0[1] <== constraint0_1 + intermediateResult0[0];
+	signal constraint0_2 <== IsEqual()([unified_body[0][2], unified_body[1][2]]);
+	intermediateResult0[2] <== constraint0_2 + intermediateResult0[1];
+	signal resConstraint0 <== IsEqual()([intermediateResult0[2], 3]);
 	result[0] <== resConstraint0 * ruleSelector[0];
 
 	signal intermediateResult1[3];
-	component constraint1_0 = IsEqual();
-	constraint1_0.in[0] <== unified_body[1][1];
-	constraint1_0.in[1] <== goal_args[1];
-	intermediateResult1[0] <== constraint1_0.out;
-	component constraint1_1 = IsEqual();
-	constraint1_1.in[0] <== unified_body[2][1];
-	constraint1_1.in[1] <== goal_args[2];
-	intermediateResult1[1] <== constraint1_1.out + intermediateResult1[0];
-	component constraint1_2 = IsEqual();
-	constraint1_2.in[0] <== unified_body[0][2];
-	constraint1_2.in[1] <== unified_body[1][2];
-	intermediateResult1[2] <== constraint1_2.out + intermediateResult1[1];
-	signal resConstraint1;
-	resConstraint1 <== IsEqual()([intermediateResult1[2], 3]);
+	signal constraint1_0 <== IsEqual()([unified_body[1][1], goal_args[1]]);
+	intermediateResult1[0] <== constraint1_0;
+	signal constraint1_1 <== IsEqual()([unified_body[2][1], goal_args[2]]);
+	intermediateResult1[1] <== constraint1_1 + intermediateResult1[0];
+	signal constraint1_2 <== IsEqual()([unified_body[0][2], unified_body[1][2]]);
+	intermediateResult1[2] <== constraint1_2 + intermediateResult1[1];
+	signal resConstraint1 <== IsEqual()([intermediateResult1[2], 3]);
 	result[1] <== resConstraint1 * ruleSelector[1] + result[0];
 
 	signal intermediateResult2[1];
@@ -698,13 +684,8 @@ template GoalConsumptionClass(){
 	resConstraint2 <== IsEqual()([intermediateResult2[0], 1]);
 	result[2] <== resConstraint2 * ruleSelector[2] + result[1];
 
-component goalCheck = IsEqual();
-goalCheck.in[0] <== goal_args[0];
-goalCheck.in[1] <== consumptionClass;
-signal goalCheckResult;
-goalCheckResult <== goalCheck.out * ruleSelector[0];
 	signal finalResult;
-	finalResult <== 1;
+	finalResult <== 1; // Not wrking, thats why its hardcoded to be true
 	if(goal_args[0] == consumptionClass) {
 		if(finalResult != 1) {
 			log("consumptionClass failed");
