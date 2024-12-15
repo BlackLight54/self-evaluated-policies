@@ -1,4 +1,4 @@
-# Self-Evaluating-Policies-w-ZKPs
+# Self-Evaluated-Policies
 
 ## How to use
 
