@@ -1,14 +1,14 @@
-% Meta-interpreter
+:- module(meta_interpreter, [prove/2]).
 
 %  === base case, end(leaf) of the proof tree ===
 prove(true, [true]) :- !.
 
 % === conjunction ===
 prove((A, B), Tree) :-
-    !,
     prove(A, TreeA),
     prove(B, TreeB),
-    append([TreeA, TreeB], Tree). % is append part of ISO prolog? If not, its source is just a few clauses
+    append([TreeA, TreeB], Tree),
+    !. % is append part of ISO prolog? If not, its source is just a few clauses
 
 % === disjunciton ===
 prove((A; _), Tree) :-
@@ -18,7 +18,7 @@ prove((_; B), Tree) :-
 
 % === handle built-in predicates ===
 prove(Goal, [State]) :-
-    predicate_property(Goal, built_in), % is this prperty part of ISO prolog?
+    predicate_property(Goal, built_in), % is this property part of ISO prolog?
     !,
     call(Goal),
     copy_term(Goal, OriginalGoal),

@@ -1,4 +1,5 @@
 % policy.pl 
+:- module(policy, [endPrice/1]).
 
 % Flow: 
 % 1. sum individual past consumptions

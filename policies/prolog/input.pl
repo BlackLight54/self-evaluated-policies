@@ -1,4 +1,6 @@
 % input.pl
+:- module(policy_input, [monthly_consumption/2, currentConsumption/1, currentPrice/2, inputPayment/1]).
+
 monthly_consumption(1,2001).
 monthly_consumption(2,2001).
 monthly_consumption(3,2001).

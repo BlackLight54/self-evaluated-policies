@@ -1,15 +1,21 @@
 #!/usr/bin/swipl -q
 
+:- use_module('./meta_interpreter.pl').
+:- use_module('./knowledge_base.pl').
 :- use_module(library(http/json)).
-:- include('./policy.pl').
-:- include('./matrix.pl').
-:- include('./input.pl').
-:- include('./meta_interpreter.pl').
-:- initialization main.
+:- use_module('./policy.pl').
+:- use_module('./matrix.pl').
+:- use_module('./input.pl').
+:- initialization write_kb.
+
+write_kb :-
+    knowledge_base_dict(KB)
+    ,json_write_dict(current_output, KB,[width(100),serialize_unknown(true)])
+    ,halt
+    .
 
 
-
-main:-
+write_proof:-
     prove(endPrice(931220),[Tree])
     ,json_write_dict(current_output, Tree,[width(100),serialize_unknown(true)])
     ,halt

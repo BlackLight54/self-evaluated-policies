@@ -1,5 +1,7 @@
 % matrix.pl
 % Tresholds
+:- module(policy_matrix, [rolling_treshold/2, savings_treshold/2, support_matrix/4, social_suport/3]).
+
 rolling_treshold('low', 0).
 rolling_treshold('mid', 3000).
 rolling_treshold('high',7000).
