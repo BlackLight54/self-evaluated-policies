@@ -9,6 +9,8 @@
 :- initialization write_kb.
 
 write_kb :-
+    /* debug
+    ,trace */
     knowledge_base_dict(KB)
     ,json_write_dict(current_output, KB,[width(100),serialize_unknown(true)])
     ,halt
