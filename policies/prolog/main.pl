@@ -8,6 +8,8 @@
 :- use_module('./input.pl').
 :- initialization write_kb.
 
+
+
 write_kb :-
     /* debug
     ,trace */

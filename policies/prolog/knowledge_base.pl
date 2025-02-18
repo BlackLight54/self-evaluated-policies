@@ -24,7 +24,7 @@ knowledge_base_dict(Dict) :-
 	Dict = DictList.
     
     
-predicate_props((Name/Arity, P), pred_dict{name:Name, arity:Arity, properties:Props, clauses:Clauses}) :-
+predicate_props((Name/Arity, P), pred_dict{name:Name, arity:Arity /* ,properties:Props */ ,clauses:Clauses}) :-
 	findall(Prop,
 		predicate_property(P, Prop),
 		Props),
@@ -33,19 +33,54 @@ predicate_props((Name/Arity, P), pred_dict{name:Name, arity:Arity, properties:Pr
 			clause_props(Clause, ClauseDict)),
 		Clauses).
 
-clause_props(Clause, clause_dict{head:HeadDict, body:BodyDict, properties:Props}) :-
+clause_props(Clause, clause_dict{head:HeadDict, body:BodyDictList /* ,properties:Props */ }) :-
 	findall(Prop,
 		clause_property(Clause, Prop),
 		Props),
 	clause(Head, Body, Clause),
-	term_props(Head, HeadDict),
-	term_props(Body, BodyDict).
+	term_props(Head, HeadDict), 
+	% preds in the body are "delimited" by the comma operator
+	body_to_list(Body, BodyList),
+	maplist(term_props, BodyList, BodyDictList).
+	% term_props(Body, BodyDict).
 
-% term_props(Term, term_dict{term_name:Name, arguments:Arguments, variables:Variables}) :-	
-% (compound(Term),
-% 	compound_name_arguments(Term, Name, Arguments),
-% 		term_variables(Term, Variables));
-% 		(
-% 			Arguments = [],
-% 			Variables = [],
-% 			Name = Term).
+
+body_to_list((A, B), [A | Rest]) :-
+	!,
+	body_to_list(B, Rest).
+body_to_list(true, []) :-
+	!.
+body_to_list(Goal, [Goal]).
+	
+
+
+term_props(Term, Dict) :-
+	compound(Term) ->
+	(
+		compound_name_arguments(Term, Name, Arguments),
+		(
+			Name = ':' ->
+			(
+				[_, NewTerm|_] = Arguments,
+				term_props(NewTerm, Dict)
+			);
+			(
+				% numbervars(Term,
+				% 	0,
+				% 	_End,
+				% 	[singletons(true), attvar(bind)]),
+				term_variables(Term, Variables),
+				numbervars(Term, 0, _End, [attvar(bind)]),
+				% varnumbers_names(Term,_Copy,Vars),
+				format(string(Vars),"~w", [Variables]),
+				Dict = term_dict{
+					term_name : Name,
+					arguments : Arguments,
+					variables : Vars
+					}
+			)
+	)
+	);
+	atomic(Term) ->
+	(Dict = Term);
+	(Arguments = [], Variables = [], Name = Term, Dict = term_dict{term_name : Name, arguments : Arguments, variables : Variables}).
