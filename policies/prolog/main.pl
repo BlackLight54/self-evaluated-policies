@@ -6,7 +6,7 @@
 :- use_module('./policy.pl').
 :- use_module('./matrix.pl').
 :- use_module('./input.pl').
-:- initialization write_kb.
+:- initialization write_proof.
 
 
 

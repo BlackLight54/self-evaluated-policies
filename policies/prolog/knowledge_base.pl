@@ -71,7 +71,7 @@ clause_props(ClauseRef, Index, _Pred, ClauseDict) :-
 
     % get structured info for each
     term_props(Head, HeadDict),
-    body_to_tree(Body, Tree),
+    body_to_tree(b,Body, Tree),
     tree_to_dict(Tree, BodyDict),
     ClauseDict = _{
        index     : Index,
@@ -90,46 +90,66 @@ clause_props(ClauseRef, Index, _Pred, ClauseDict) :-
 %  conjunction, disjunction, implication, negation, cut
 %  then convert the parse tree into a nested dictionary.
 
-body_to_tree((A, B), op(and, [TreeA, TreeB])) :-
+body_to_tree(n,(A, B), op(and, Goals)) :-
     !,
-    % trace,
-    body_to_tree(A, TreeA),
-    body_to_tree(B, TreeB).
-
-body_to_tree((A; B), op(or, [TreeA, TreeB])) :-
+    body_to_tree(n,A, TreeA),
+    body_to_tree(n,B, TreeB),
+    ( TreeA = op(and, AGoals) ->
+        CombinedA = AGoals
+      ; CombinedA = [TreeA]
+    ),
+    ( TreeB = op(and, BGoals) ->
+        CombinedB = BGoals
+      ; CombinedB = [TreeB]
+    ),
+    append(CombinedA, CombinedB, Goals).
+body_to_tree(n,(A ; B), op(or, Goals)) :-
     !,
-    body_to_tree(A, TreeA),
-    body_to_tree(B, TreeB).
+    body_to_tree(n,A, TreeA),
+    body_to_tree(n,B, TreeB),
+    ( TreeA = op(or, AGoals) ->
+        CombinedA = AGoals
+      ; CombinedA = [TreeA]
+    ),
+    ( TreeB = op(or, BGoals) ->
+        CombinedB = BGoals
+      ; CombinedB = [TreeB]
+    ),
+    append(CombinedA, CombinedB, Goals).
 
-body_to_tree((A -> B), op(implication, [TreeA, TreeB])) :-
+body_to_tree(b,(A, B), op(and, [TreeA, TreeB])) :-
     !,
-    body_to_tree(A, TreeA),
-    body_to_tree(B, TreeB).
+    body_to_tree(b,A, TreeA),
+    body_to_tree(b,B, TreeB).
 
-body_to_tree(\+ A, op(negation, [TreeA])) :-
+body_to_tree(b,(A; B), op(or, [TreeA, TreeB])) :-
     !,
-    body_to_tree(A, TreeA).
+    body_to_tree(b,A, TreeA),
+    body_to_tree(b,B, TreeB).
 
-body_to_tree(!, op(cut, [])) :-
+body_to_tree(Arity,(A -> B), op(implication, [TreeA, TreeB])) :-
+    !,
+    body_to_tree(Arity,A, TreeA),
+    body_to_tree(Arity,B, TreeB).
+
+body_to_tree(Arity,\+ A, op(negation, [TreeA])) :-
+    !,
+    body_to_tree(Arity,A, TreeA).
+
+body_to_tree(_Arity,!, op(cut, [])) :-
     !.
-body_to_tree(A, op(goal, [A])).
+body_to_tree(_Arity,A, op(goal, [A])).
 
 %% tree_to_dict(+Tree, -Dict)
 %% --------------------------------------------
 %%  Convert the operator-based parse tree into a nested dictionary
 %%  ready for JSON output.
 
-tree_to_dict(op(and, [Left, Right]),
-    _{ type: "conjunction",
-       subgoals: [DictLeft, DictRight] }) :-
-    tree_to_dict(Left, DictLeft),
-    tree_to_dict(Right, DictRight).
+tree_to_dict(op(and, SubTrees), _{type:"conjunction", subgoals:SubDicts}) :-
+    maplist(tree_to_dict, SubTrees, SubDicts).
 
-tree_to_dict(op(or, [Left, Right]),
-    _{ type: "disjunction",
-       subgoals: [DictLeft, DictRight] }) :-
-    tree_to_dict(Left, DictLeft),
-    tree_to_dict(Right, DictRight).
+tree_to_dict(op(or, SubTrees), _{type:"disjunction", subgoals:SubDicts}) :-
+    maplist(tree_to_dict, SubTrees, SubDicts).
 
 tree_to_dict(op(implication, [Left, Right]),
     _{ type: "implication",
@@ -167,6 +187,8 @@ term_props(Term, Dict) :-
 		Dict = GoalDict.put(_{module:Module})
 	; Term = '$VAR'(N)   -> 
         Dict = _{ type: variable, number_in_clause: N }
+    ; Term = []          -> 
+        Dict = _{ type: atomic, value: "[]" }
 	; var(Term)          -> 
         % In principle, if we didn't numbervars, we'd do something else here
         Dict = _{ type: var, value: "un-numbered-var" }
@@ -183,13 +205,3 @@ term_props(Term, Dict) :-
         }
     ).
 
-%%----------------------------------------------------------------------------
-%% 6) Turn a clause body into a list of top-level goals
-%%----------------------------------------------------------------------------
-
-body_to_list((A, B), [A | Rest]) :-
-    !,
-    body_to_list(B, Rest).
-body_to_list(true, []) :-
-    !.
-body_to_list(Goal, [Goal]).

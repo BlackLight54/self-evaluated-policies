@@ -32,9 +32,9 @@ prove(Goal, [State]) :-
 
 % === general case ===
 prove(Goal, [State]) :-
-    Goal \= true, %  predicate_property(A, built_in) already filters these, but i don't know if its part of ISO prolog
-    Goal \= (_,_),
-    Goal \= (_\=_),
+    % Goal \= true, %  predicate_property(A, built_in) already filters these, but i don't know if its part of ISO prolog
+    % Goal \= (_,_),
+    % Goal \= (_\=_),
     clause(Goal, Body),
     copy_term((Goal, Body), (OriginalGoal, _OriginalBody)),
     prove(Body, Tree),
