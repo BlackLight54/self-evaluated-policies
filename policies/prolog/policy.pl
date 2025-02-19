@@ -1,5 +1,19 @@
 % policy.pl 
-:- module(policy, [endPrice/1]).
+:- module(policy,[
+    % list all preds    
+    monthlyConsumptions/1,
+    sumOfMonthlyConsumptions/2,
+    rollingConsumption/2,
+    consumptionClass/2,
+    savingsClass/3,
+    priceBase/1,
+    applySupport/4,
+    applySavingsSupport/4,
+    socialCreds/1,
+    applySocialSupports/3,
+    endPrice/1,
+    inputPriceOk/0
+    ]).
 
 % Flow: 
 % 1. sum individual past consumptions
