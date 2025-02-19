@@ -68,21 +68,90 @@ clause_props(ClauseRef, Index, _Pred, ClauseDict) :-
     numbervars((Head,Body), 0, _MaxVar, [attvar(bind)]),
 
     % convert body to a top-level list of goals
-    body_to_list(Body, BodyGoals),
 
     % get structured info for each
     term_props(Head, HeadDict),
-    maplist(term_props, BodyGoals, BodyDicts),
-
+    body_to_tree(Body, Tree),
+    tree_to_dict(Tree, BodyDict),
     ClauseDict = _{
        index     : Index,
        head      : HeadDict,
-       body      : BodyDicts
+       body      : BodyDict
        /* properties: ClauseProps, */
     }.
 
 %%----------------------------------------------------------------------------
-%% 4) Decompose a term into a nested dictionary
+%% 4) Decompose a Body into sub-goals 
+%%----------------------------------------------------------------------------
+
+% body_to_tree(+Body, -Tree)
+% --------------------------------------------
+%  Decompose a clause Body into a parse tree that captures
+%  conjunction, disjunction, implication, negation, cut
+%  then convert the parse tree into a nested dictionary.
+
+body_to_tree((A, B), op(and, [TreeA, TreeB])) :-
+    !,
+    % trace,
+    body_to_tree(A, TreeA),
+    body_to_tree(B, TreeB).
+
+body_to_tree((A; B), op(or, [TreeA, TreeB])) :-
+    !,
+    body_to_tree(A, TreeA),
+    body_to_tree(B, TreeB).
+
+body_to_tree((A -> B), op(implication, [TreeA, TreeB])) :-
+    !,
+    body_to_tree(A, TreeA),
+    body_to_tree(B, TreeB).
+
+body_to_tree(\+ A, op(negation, [TreeA])) :-
+    !,
+    body_to_tree(A, TreeA).
+
+body_to_tree(!, op(cut, [])) :-
+    !.
+body_to_tree(A, op(goal, [A])).
+
+%% tree_to_dict(+Tree, -Dict)
+%% --------------------------------------------
+%%  Convert the operator-based parse tree into a nested dictionary
+%%  ready for JSON output.
+
+tree_to_dict(op(and, [Left, Right]),
+    _{ type: "conjunction",
+       subgoals: [DictLeft, DictRight] }) :-
+    tree_to_dict(Left, DictLeft),
+    tree_to_dict(Right, DictRight).
+
+tree_to_dict(op(or, [Left, Right]),
+    _{ type: "disjunction",
+       subgoals: [DictLeft, DictRight] }) :-
+    tree_to_dict(Left, DictLeft),
+    tree_to_dict(Right, DictRight).
+
+tree_to_dict(op(implication, [Left, Right]),
+    _{ type: "implication",
+       subgoals: [DictLeft, DictRight] }) :-
+    tree_to_dict(Left, DictLeft),
+    tree_to_dict(Right, DictRight).
+
+tree_to_dict(op(negation, [Inner]),
+    _{ type: "negation",
+       subgoals: [DictInner] }) :-
+    tree_to_dict(Inner, DictInner).
+
+tree_to_dict(op(cut, []),
+    _{ type: "cut" }).
+
+tree_to_dict(op(goal, [Goal]), Dict) :-
+    term_props(Goal, TermDict),
+    Dict = _{ type: "goal",
+              goal: TermDict }.
+
+%%----------------------------------------------------------------------------
+%% 5) Decompose a term into a nested dictionary
 %%----------------------------------------------------------------------------
 
 %% If it’s a module:goal, store module name separately.
@@ -115,7 +184,7 @@ term_props(Term, Dict) :-
     ).
 
 %%----------------------------------------------------------------------------
-%% 5) Turn a clause body into a list of top-level goals
+%% 6) Turn a clause body into a list of top-level goals
 %%----------------------------------------------------------------------------
 
 body_to_list((A, B), [A | Rest]) :-

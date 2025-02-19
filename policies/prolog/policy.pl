@@ -53,18 +53,15 @@ savingsClass(RollingConsumptionVar,Consumption,Class):-
     savings_treshold('high',Treshold),
     CurrentSaving is RollingConsumptionVar - Consumption,
     CurrentSaving > Treshold,
-    Class = 'high'.
-savingsClass(RollingConsumptionVar,Consumption,Class):-
+    Class = 'high';
     savings_treshold('mid',Treshold),
     CurrentSaving is RollingConsumptionVar - Consumption,
     CurrentSaving > Treshold,
-    Class = 'mid'.
-savingsClass(RollingConsumptionVar,Consumption,Class):-
+    Class = 'mid';
     savings_treshold('low',Treshold),
     CurrentSaving is RollingConsumptionVar - Consumption,
     CurrentSaving > Treshold,
-    Class = 'low'.
-savingsClass(_RollingConsumptionVar,_Consumption,Class):-
+    Class = 'low';
     Class = 'none'.
 
 % === 5. Apply savings based support ===
